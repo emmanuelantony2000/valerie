@@ -1,0 +1,36 @@
+[package]
+name = "valerie"
+version = "0.1.0"
+authors = ["Emmanuel Antony <emmanuelantony2000@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook", "wee_alloc"]
+
+[dependencies]
+wasm-bindgen = "0.2.62"
+wasm-bindgen-futures = "0.4.12"
+console_error_panic_hook = { version = "0.1.6", optional = true }
+wee_alloc = { version = "0.4.5", optional = true }
+
+[dependencies.web-sys]
+version = "0.3.39"
+features = [
+    "Window",
+    "Document",
+    "EventTarget",
+    "Node",
+    "Element",
+    "HtmlElement"
+]
+
+[dev-dependencies]
+wasm-bindgen = "0.2.62"
+wasm-bindgen-test = "0.3.12"
+
+[profile.release]
+lto = true
+opt-level = 3
