@@ -10,6 +10,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 valerie = { path = "../../../valerie" }
 wasm-bindgen = "0.2.62"
+futures = { version = "0.3.5", features = ["alloc"] }
+spin = "0.5.2"
 
 [profile.release]
 lto = true

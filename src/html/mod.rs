@@ -1,7 +1,7 @@
-pub mod div;
-pub mod paragraph;
-pub mod button;
-
+pub use button::*;
 pub use div::*;
 pub use paragraph::*;
-pub use button::*;
+
+pub mod button;
+pub mod div;
+pub mod paragraph;

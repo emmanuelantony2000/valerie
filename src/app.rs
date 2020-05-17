@@ -1,45 +1,79 @@
 use crate::Component;
-use std::collections::HashMap;
-use std::sync::mpsc::Receiver;
-use std::sync::{Arc, Mutex};
+use alloc::boxed::Box;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use futures::channel::mpsc::{Receiver, Sender};
+use futures::lock::Mutex;
+use futures::stream::StreamExt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use web_sys::Element;
 
 #[derive(Default)]
 pub struct App {
-    routes: HashMap<&'static str, Box<dyn Component>>,
+    routes: BTreeMap<&'static str, Box<dyn Component>>,
     start: Option<&'static str>,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            routes: HashMap::new(),
+            routes: BTreeMap::new(),
             start: None,
         }
     }
 
-    pub fn push(mut self, route: &'static str, component: Box<dyn Component>) -> Self {
+    pub fn push(&mut self, route: &'static str, component: Box<dyn Component>) -> &mut Self {
         self.routes.insert(route, component);
         self.start = Some(route);
         self
     }
 
-    pub fn start(mut self, start: &'static str) -> Self {
+    pub fn start(&mut self, start: &'static str) -> &mut Self {
         self.start = Some(start);
         self
     }
 
-    pub fn render(self) {
-        web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap()
-            .body()
-            .unwrap()
-            .append_child(self.routes.get(self.start.unwrap()).unwrap())
-            .unwrap();
+    pub fn render(&mut self) {
+        if let Some(x) = body().first_child() {
+            body()
+                .replace_child(
+                    &self.routes.get_mut(self.start.unwrap()).unwrap().view(),
+                    &x,
+                )
+                .unwrap();
+        } else {
+            body()
+                .append_child(&self.routes.get_mut(self.start.unwrap()).unwrap().view())
+                .unwrap();
+        }
+
+        // wasm_bindgen_futures::spawn_local(self.render_loop(rx));
+
+        // tx.try_send(Some("iter")).unwrap();
+
+        // while rx.try_next().is_err() {}
+
+        // body().append_child(&self.routes.get_mut(self.start.unwrap()).unwrap().view()).unwrap();
+
+        // let closure = Closure::wrap(Box::new(move || self.render(rx)) as Box<dyn FnMut()>);
+        // request_animation_frame(&closure);
+        // closure.forget();
     }
+
+    // async fn render_loop(mut self, mut rx: Receiver<Option<&'static str>>) {
+    //     while let Some(Some(_)) = rx.next().await {
+    //         web_sys::window()
+    //             .unwrap()
+    //             .document()
+    //             .unwrap()
+    //             .body()
+    //             .unwrap()
+    //             .replace_child(&self.routes.get_mut(self.start.unwrap()).unwrap().view())
+    //             .unwrap();
+    //     }
+    // }
 
     // pub fn render(self, rx: Receiver<&'static str>) {
     //     let f = Arc::new(RefCell::new(None));

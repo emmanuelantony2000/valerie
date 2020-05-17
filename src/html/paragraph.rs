@@ -2,11 +2,16 @@ use crate::Component;
 use core::ops::Deref;
 use web_sys::{Element, Node};
 
+#[derive(Clone)]
 pub struct Paragraph {
-    view: Box<Element>,
+    view: Element,
 }
 
-impl Component for Paragraph {}
+impl Component for Paragraph {
+    fn view(&mut self) -> Element {
+        self.view.clone()
+    }
+}
 
 impl Deref for Paragraph {
     type Target = Node;
@@ -16,30 +21,34 @@ impl Deref for Paragraph {
     }
 }
 
+impl From<Paragraph> for Element {
+    fn from(x: Paragraph) -> Self {
+        x.view
+    }
+}
+
 impl Paragraph {
-    pub fn view() -> Self {
+    pub fn new() -> Self {
         Self {
             view: {
-                Box::new(
-                    web_sys::window()
-                        .expect("No global `window` exits")
-                        .document()
-                        .expect("Should have a document on window")
-                        .create_element("p")
-                        .expect("Cannot create `p`"),
-                )
+                web_sys::window()
+                    .expect("No global `window` exits")
+                    .document()
+                    .expect("Should have a document on window")
+                    .create_element("p")
+                    .expect("Cannot create `p`")
             },
         }
     }
 
-    pub fn push_single(self, other: Box<dyn Deref<Target = Node>>) -> Self {
+    pub fn push_single(self, other: Element) -> Self {
         self.view.append_child(&other).unwrap();
         self
     }
 
-    pub fn push(mut self, others: Vec<Box<dyn Deref<Target = Node>>>) -> Self {
+    pub fn push(self, others: &[Element]) -> Self {
         for i in others {
-            self = self.push_single(i);
+            self.append_child(i).unwrap();
         }
 
         self
