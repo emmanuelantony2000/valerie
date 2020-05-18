@@ -1,14 +1,11 @@
 use crate::Component;
 use alloc::boxed::Box;
-use alloc::sync::Arc;
-use core::mem::transmute;
 use core::ops::Deref;
-use futures::channel::mpsc::Sender;
-use futures::sink::SinkExt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
-// use std::sync::mpsc::Sender;
+use core::fmt::Display;
+use alloc::string::ToString;
 
 #[derive(Clone)]
 pub struct Button {
@@ -35,14 +32,17 @@ impl From<Button> for Element {
     }
 }
 
+impl Default for Button {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Button {
     pub fn new() -> Self {
         Self {
             view: {
-                web_sys::window()
-                    .expect("No global `window` exits")
-                    .document()
-                    .expect("Should have a document on window")
+                document()
                     .create_element("button")
                     .expect("Cannot create `button`")
             },
@@ -55,38 +55,17 @@ impl Button {
     }
 
     pub fn push(self, others: &[Element]) -> Self {
-        for i in others {
-            self.view.append_child(&i).unwrap();
-        }
+        others.iter().for_each(|i| {
+            self.append_child(i).unwrap();
+        });
 
         self
     }
 
-    pub fn value(self, content: &str) -> Self {
-        self.view.set_inner_html(content);
+    pub fn value<T>(self, content: T) -> Self where T: Display {
+        self.view.set_inner_html(content.to_string().as_ref());
         self
     }
-
-    // pub fn on_click(
-    //     self,
-    //     function: Box<dyn FnMut()>,
-    //     mut tx: Sender<Option<&'static str>>,
-    // ) -> Self {
-    //     let function = Closure::wrap(function as Box<dyn FnMut()>);
-
-    //     let send =
-    //         Box::new(move || while tx.try_send(Some("iter")).is_err() {}) as Box<dyn FnMut()>;
-    //     let send = Closure::wrap(send);
-
-    //     self.view
-    //         .add_event_listener_with_callback("click", function.as_ref().unchecked_ref())
-    //         .unwrap();
-    //     self.view
-    //         .add_event_listener_with_callback("click", send.as_ref().unchecked_ref())
-    //         .unwrap();
-
-    //     self
-    // }
 
     pub fn on_click(self, function: Box<dyn FnMut()>) -> Self {
         let function = Closure::wrap(function);
@@ -98,4 +77,14 @@ impl Button {
 
         self
     }
+}
+
+fn window() -> web_sys::Window {
+    web_sys::window().expect("No global `window` exists")
+}
+
+fn document() -> web_sys::Document {
+    window()
+        .document()
+        .expect("Should have a document on window")
 }

@@ -27,14 +27,17 @@ impl From<Div> for Element {
     }
 }
 
+impl Default for Div {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Div {
     pub fn new() -> Self {
         Self {
             view: {
-                web_sys::window()
-                    .expect("No global `window` exits")
-                    .document()
-                    .expect("Should have a document on window")
+                document()
                     .create_element("div")
                     .expect("Cannot create `div`")
             },
@@ -47,9 +50,17 @@ impl Div {
     }
 
     pub fn push(self, others: &[Element]) -> Self {
-        for i in others {
+        others.iter().for_each(|i| {
             self.append_child(i).unwrap();
-        }
+        });
+
+        self
+    }
+
+    pub fn push_loop<F>(self, func: F, n: usize) -> Self where F: Fn(usize)-> Element {
+        (0..n).for_each(|i| {
+            self.append_child(&func(i)).unwrap();
+        });
 
         self
     }
@@ -58,4 +69,14 @@ impl Div {
         self.view.set_inner_html(content);
         self
     }
+}
+
+fn window() -> web_sys::Window {
+    web_sys::window().expect("No global `window` exists")
+}
+
+fn document() -> web_sys::Document {
+    window()
+        .document()
+        .expect("Should have a document on window")
 }
