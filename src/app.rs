@@ -1,22 +1,23 @@
-use crate::Component;
+use crate::Page;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
 
 #[derive(Default)]
 pub struct App {
-    routes: BTreeMap<&'static str, Box<dyn Component>>,
+    routes: BTreeMap<&'static str, Box<dyn Page>>,
     start: Option<&'static str>,
 }
 
 impl App {
     pub fn new() -> Self {
+        console_error_panic_hook::set_once();
         Self {
             routes: BTreeMap::new(),
             start: None,
         }
     }
 
-    pub fn push(&mut self, route: &'static str, component: Box<dyn Component>) -> &mut Self {
+    pub fn push(&mut self, route: &'static str, component: Box<dyn Page>) -> &mut Self {
         self.routes.insert(route, component);
         self.start = Some(route);
         self
@@ -31,13 +32,25 @@ impl App {
         if let Some(x) = body().first_child() {
             body()
                 .replace_child(
-                    &self.routes.get_mut(self.start.unwrap()).unwrap().view(),
+                    &self
+                        .routes
+                        .get_mut(self.start.unwrap())
+                        .unwrap()
+                        .view()
+                        .view(),
                     &x,
                 )
                 .unwrap();
         } else {
             body()
-                .append_child(&self.routes.get_mut(self.start.unwrap()).unwrap().view())
+                .append_child(
+                    &self
+                        .routes
+                        .get_mut(self.start.unwrap())
+                        .unwrap()
+                        .view()
+                        .view(),
+                )
                 .unwrap();
         }
     }
