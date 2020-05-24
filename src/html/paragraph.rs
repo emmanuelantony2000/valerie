@@ -1,51 +1,67 @@
 use super::Function;
-use crate::tree::{RcTreeNode, Tree};
+// use crate::tree::{RcTreeNode, Tree};
+use trees::Tree;
 use crate::Component;
 use alloc::boxed::Box;
 use alloc::rc::Rc;
+use alloc::sync::Arc;
+use core::sync::atomic::{AtomicU64, AtomicBool};
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::sync::atomic::Ordering;
+use futures_intrusive::channel::shared::StateReceiver;
 
 pub struct Paragraph {
     content: String,
-    tree: Tree,
+    tree: Option<Tree<Function>>,
 }
 
 impl Paragraph {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
+    pub fn new() -> Self {
+        Self {
             content: String::new(),
-            tree: Tree::default(),
-        })
+            tree: Some(Tree::new(Function::new())),
+        }
     }
 
-    pub fn push(mut self, components: &[(String, RcTreeNode)]) -> Self {
-        components.iter().for_each(|(x, y)| {
+    pub fn value(mut self, value: Arc<AtomicU64>, rx: StateReceiver<()>) -> Self {
+        let (x, mut y) = value.load(Ordering::SeqCst).view();
+        y.root_mut().data.value = Some(value);
+        y.root_mut().data.rx = Some(rx);
+
+        self.content.push_str(&x);
+        self.tree.as_mut().unwrap().root_mut().push_back(y);
+
+        self
+    }
+
+    pub fn push(mut self, components: Vec<(String, Tree<Function>)>) -> Self {
+        components.into_iter().for_each(|(x, y)| {
             self.content.push_str(&x);
-            self.tree.insert(Rc::clone(y));
+            self.tree.as_mut().unwrap().root_mut().push_back(y);
         });
 
         self
     }
 
-    pub fn on_click(self: Box<Self>, function: Box<dyn FnMut()>) -> Box<Self> {
-        self.tree.value().borrow_mut().on_click = Some(function);
+    pub fn on_click(mut self, function: Box<dyn FnMut()>) -> Self {
+        self.tree.as_mut().unwrap().root_mut().data.on_click = Some(function);
         self
     }
 }
 
 impl Component for Paragraph {
-    fn view(&self) -> (String, RcTreeNode) {
+    fn view(&mut self) -> (String, Tree<Function>) {
         let mut val = String::with_capacity(("<p>".len() * 2) + 1 + self.content.len());
         val.push_str("<p>");
         val.push_str(&self.content);
         val.push_str("</p>");
 
-        (val, self.tree.root())
+        (val, self.tree.take().unwrap())
     }
 }
 
-impl Default for Box<Paragraph> {
+impl Default for Paragraph {
     fn default() -> Self {
         Paragraph::new()
     }
