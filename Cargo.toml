@@ -8,13 +8,13 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error_panic_hook", "wee_alloc"]
+default = ["console_error_panic_hook"]
 
 [dependencies]
 wasm-bindgen = "0.2.62"
 wasm-bindgen-futures = "0.4.12"
 console_error_panic_hook = { version = "0.1.6", optional = true }
-wee_alloc = { version = "0.4.5", optional = true }
+wee_alloc = { version = "0.4.5" }
 trees = "0.3.0"
 futures-intrusive = "0.3.1"
 

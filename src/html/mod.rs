@@ -1,34 +1,28 @@
-// use crate::tree::{RcTreeNode, Tree};
-use trees::Tree;
-use crate::Component;
+use crate::Tree;
+
 use alloc::boxed::Box;
-use alloc::rc::Rc;
-use alloc::string::String;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::pin::Pin;
+use core::sync::atomic::{AtomicU64, Ordering};
+use futures_intrusive::channel::shared::StateReceiver;
+use futures_intrusive::channel::StateId;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::{Element, Node};
+
 pub use button::*;
 pub use div::*;
 pub use paragraph::*;
-use wasm_bindgen::prelude::*;
-use core::ops::Deref;
-use alloc::string::ToString;
-use core::sync::atomic::Ordering;
-use wasm_bindgen::JsCast;
-use web_sys::{Element, Node};
-use alloc::sync::Arc;
-use core::pin::Pin;
-use core::sync::atomic::{AtomicU64, AtomicBool};
-// use multiqueue::BroadcastReceiver;
-use futures_intrusive::channel::shared::StateReceiver;
-use futures_intrusive::channel::StateId;
 
 pub mod button;
 pub mod div;
 pub mod paragraph;
 
-// #[derive(Clone)]
 pub struct Html {
     content: String,
-    tree: Tree<Function>,
+    tree: Tree,
 }
 
 impl Html {
@@ -39,7 +33,7 @@ impl Html {
         }
     }
 
-    pub fn push(mut self, components: Vec<(String, Tree<Function>)>) -> Self {
+    pub fn push(mut self, components: Vec<(String, Tree)>) -> Self {
         components.into_iter().for_each(|(x, y)| {
             self.content.push_str(&x);
             self.tree.root_mut().push_back(y);
@@ -50,7 +44,7 @@ impl Html {
 
     pub fn push_loop<F>(mut self, func: F, n: usize) -> Self
     where
-        F: Fn(usize) -> (String, Tree<Function>),
+        F: Fn(usize) -> (String, Tree),
     {
         (0..n).for_each(|x| {
             let (x, y) = func(x);
@@ -79,13 +73,6 @@ impl Html {
     fn link(node: Arc<Node>, mut tree_node: Pin<&mut trees::Node<Function>>) {
         tree_node.data.node(Arc::clone(&node));
 
-        // if let Some(x) = value.borrow_mut().on_click() {
-        //     let x = Closure::wrap(x);
-        //     node.add_event_listener_with_callback("click", x.as_ref().unchecked_ref())
-        //         .unwrap();
-        //     x.forget()
-        // }
-
         let mut kids = node.first_child();
 
         for child in tree_node.iter_mut() {
@@ -93,19 +80,6 @@ impl Html {
             Self::link(Arc::clone(&arc), child);
             kids = arc.next_sibling();
         }
-
-        // let mut children = tree_node.iter_mut();
-
-        // while let (Some(kid), Some(child)) = (kids, children.next()) {
-        //     let kid = Arc::new(kid);
-        //     Self::link(Arc::clone(&kid), child);
-
-        //     kids = kid.next_sibling();
-        // }
-
-        // for (i, child) in tree_node.borrow().children().iter().enumerate() {
-        //     Self::link(children.item(i as u32).unwrap(), Rc::clone(child));
-        // }
     }
 }
 
@@ -135,7 +109,12 @@ pub struct Function {
 
 impl Function {
     pub fn new() -> Self {
-        Self { node: None, value: None, rx: None, on_click: None }
+        Self {
+            node: None,
+            value: None,
+            rx: None,
+            on_click: None,
+        }
     }
 
     pub fn node(&mut self, node: Arc<Node>) {
@@ -149,11 +128,12 @@ impl Function {
             x.forget();
         }
 
-        // use crate::log;
-        // log!("{:?}", node);
-
         if let Some(x) = self.value.as_ref() {
-            wasm_bindgen_futures::spawn_local(change(Arc::clone(&node), Arc::clone(&x), self.rx.take().unwrap()));
+            wasm_bindgen_futures::spawn_local(change(
+                Arc::clone(&node),
+                Arc::clone(&x),
+                self.rx.take().unwrap(),
+            ));
         }
     }
 
@@ -168,23 +148,4 @@ pub async fn change(node: Arc<Node>, value: Arc<AtomicU64>, rx: StateReceiver<()
         node.set_node_value(Some(&value.load(Ordering::SeqCst).to_string()));
         old = new;
     }
-
-    // loop {
-    //     let &(ref data, ref lock, ref cvar) = &*state;
-        
-    //     // {
-    //         // let mut started = lock.lock().unwrap();
-    //         // while !*started {
-    //         //     started = cvar.wait(started).unwrap();
-    //         // }
-    //     // }
-
-    //     // if !lock.load(Ordering::Acquire) {
-    //     //     continue;
-    //     // }
-
-    //     // let node = node.first_child().unwrap();
-    //     node.set_node_value(Some(&data.load(Ordering::SeqCst).to_string()));
-    //     lock.store(false, Ordering::Release);
-    // }
 }

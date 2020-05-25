@@ -1,5 +1,5 @@
 [package]
-name = "hello_world"
+name = "list"
 version = "0.1.0"
 authors = ["Emmanuel Antony <emmanuelantony2000@gmail.com>"]
 edition = "2018"
