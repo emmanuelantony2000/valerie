@@ -1,24 +1,21 @@
+use crate::Function;
 use crate::Tree;
 
-use alloc::boxed::Box;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::pin::Pin;
-use core::sync::atomic::{AtomicU64, Ordering};
-use futures_intrusive::channel::shared::StateReceiver;
-use futures_intrusive::channel::StateId;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
 
 pub use button::*;
 pub use div::*;
 pub use paragraph::*;
+pub use tag::*;
 
 pub mod button;
 pub mod div;
 pub mod paragraph;
+pub mod tag;
 
 pub struct Html {
     content: String,
@@ -67,6 +64,8 @@ impl Html {
             Self::link(Arc::clone(&arc), self.tree.root_mut());
         }
 
+        self.content = String::new();
+
         template
     }
 
@@ -97,55 +96,4 @@ fn document() -> web_sys::Document {
     window()
         .document()
         .expect("Should have a document on window")
-}
-
-#[derive(Default)]
-pub struct Function {
-    node: Option<Arc<Node>>,
-    value: Option<Arc<AtomicU64>>,
-    rx: Option<StateReceiver<()>>,
-    on_click: Option<Box<dyn FnMut()>>,
-}
-
-impl Function {
-    pub fn new() -> Self {
-        Self {
-            node: None,
-            value: None,
-            rx: None,
-            on_click: None,
-        }
-    }
-
-    pub fn node(&mut self, node: Arc<Node>) {
-        self.node = Some(Arc::clone(&node));
-
-        let on_click = self.on_click();
-        if let Some(x) = on_click {
-            let x = Closure::wrap(x);
-            node.add_event_listener_with_callback("click", x.as_ref().unchecked_ref())
-                .unwrap();
-            x.forget();
-        }
-
-        if let Some(x) = self.value.as_ref() {
-            wasm_bindgen_futures::spawn_local(change(
-                Arc::clone(&node),
-                Arc::clone(&x),
-                self.rx.take().unwrap(),
-            ));
-        }
-    }
-
-    pub fn on_click(&mut self) -> Option<Box<dyn FnMut()>> {
-        self.on_click.take()
-    }
-}
-
-pub async fn change(node: Arc<Node>, value: Arc<AtomicU64>, rx: StateReceiver<()>) {
-    let mut old = StateId::new();
-    while let Some((new, _)) = rx.receive(old).await {
-        node.set_node_value(Some(&value.load(Ordering::SeqCst).to_string()));
-        old = new;
-    }
 }

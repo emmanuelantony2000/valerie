@@ -17,6 +17,8 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5" }
 trees = "0.3.0"
 futures-intrusive = "0.3.1"
+parking_lot = "0.10.2"
+crossbeam = "0.7.3"
 
 [dependencies.web-sys]
 version = "0.3.39"

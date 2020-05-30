@@ -1,61 +1,26 @@
-use super::Function;
-use crate::Component;
-use crate::Tree;
+use super::Tag;
 
-use alloc::boxed::Box;
-use alloc::string::String;
-use alloc::sync::Arc;
-use alloc::vec::Vec;
-use core::sync::atomic::{AtomicU64, Ordering};
-use futures_intrusive::channel::shared::StateReceiver;
+use core::ops::{Deref, DerefMut};
 
-pub struct Div {
-    content: String,
-    tree: Option<Tree>,
-}
+pub struct Div(Tag);
 
 impl Div {
     pub fn new() -> Self {
-        Self {
-            content: String::new(),
-            tree: Some(Tree::new(Function::new())),
-        }
-    }
-
-    pub fn value(mut self, value: Arc<AtomicU64>, rx: StateReceiver<()>) -> Self {
-        let (x, mut y) = value.load(Ordering::SeqCst).view();
-        y.root_mut().data.value = Some(value);
-        y.root_mut().data.rx = Some(rx);
-
-        self.content.push_str(&x);
-        self.tree.as_mut().unwrap().root_mut().push_back(y);
-
-        self
-    }
-
-    pub fn push(mut self, components: Vec<(String, Tree)>) -> Self {
-        components.into_iter().for_each(|(x, y)| {
-            self.content.push_str(&x);
-            self.tree.as_mut().unwrap().root_mut().push_back(y);
-        });
-
-        self
-    }
-
-    pub fn on_click(mut self, function: Box<dyn FnMut()>) -> Self {
-        self.tree.as_mut().unwrap().root_mut().data.on_click = Some(function);
-        self
+        Self(Tag::new("div"))
     }
 }
 
-impl Component for Div {
-    fn view(&mut self) -> (String, Tree) {
-        let mut val = String::with_capacity(("<div>".len() * 2) + 1 + self.content.len());
-        val.push_str("<div>");
-        val.push_str(&self.content);
-        val.push_str("</div>");
+impl Deref for Div {
+    type Target = Tag;
 
-        (val, self.tree.take().unwrap())
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Div {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
