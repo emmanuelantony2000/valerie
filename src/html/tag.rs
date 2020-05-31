@@ -1,7 +1,5 @@
 use crate::Component;
-use crate::State;
-use crate::Tree;
-use crate::Function;
+use crate::{Event,State,Tree,Function};
 
 use alloc::boxed::Box;
 use alloc::string::String;
@@ -52,10 +50,10 @@ impl Tag {
         F: FnMut(&mut T) + 'static,
     {
         let mut state = state.clone();
-        self.tree.as_mut().unwrap().root_mut().data.on_click = Some(Box::new(move || {
+        self.tree.as_mut().unwrap().root_mut().data.events.push(Event::new("click", Box::new(move || {
             func(&mut state);
             state.update();
-        }));
+        })));
         
         self
     }

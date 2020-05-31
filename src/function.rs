@@ -6,12 +6,27 @@ use futures_intrusive::channel::StateId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::Node;
+use alloc::vec::Vec;
+
+pub struct Event {
+    event: &'static str,
+    callback: Box<dyn FnMut()>,
+}
+
+impl Event {
+    pub fn new(event: &'static str, callback: Box<dyn FnMut()>) -> Self {
+        Self {
+            event,
+            callback
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct Function {
     node: Option<Arc<Node>>,
     pub rx: Option<Arc<Receiver>>,
-    pub on_click: Option<Box<dyn FnMut()>>,
+    pub events: Vec<Event>,
 }
 
 impl Function {
@@ -19,17 +34,16 @@ impl Function {
         Self {
             node: None,
             rx: None,
-            on_click: None,
+            events: Vec::new(),
         }
     }
 
     pub fn node(&mut self, node: Arc<Node>) {
         self.node = Some(Arc::clone(&node));
 
-        let on_click = self.on_click();
-        if let Some(x) = on_click {
-            let x = Closure::wrap(x);
-            node.add_event_listener_with_callback("click", x.as_ref().unchecked_ref())
+        while let Some(Event {event, callback}) = self.events.pop() {
+            let x = Closure::wrap(callback);
+            node.add_event_listener_with_callback(event, x.as_ref().unchecked_ref())
                 .unwrap();
             x.forget();
         }
@@ -37,10 +51,6 @@ impl Function {
         if self.rx.is_some() {
             wasm_bindgen_futures::spawn_local(change(Arc::clone(&node), self.rx.take().unwrap()));
         }
-    }
-
-    pub fn on_click(&mut self) -> Option<Box<dyn FnMut()>> {
-        self.on_click.take()
     }
 }
 

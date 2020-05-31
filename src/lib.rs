@@ -10,7 +10,7 @@ use html::Html;
 
 pub use app::*;
 pub use channel::Channel;
-pub use function::Function;
+pub use function::{Event, Function};
 pub use state::{State, StateAtomic, StateMutex};
 pub use web_sys::{Element, Node};
 
@@ -19,6 +19,7 @@ pub mod channel;
 pub mod function;
 pub mod html;
 pub mod state;
+pub mod tree;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;

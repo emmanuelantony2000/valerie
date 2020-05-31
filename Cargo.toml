@@ -19,6 +19,7 @@ trees = "0.3.0"
 futures-intrusive = "0.3.1"
 parking_lot = "0.10.2"
 crossbeam = "0.7.3"
+intrusive-collections = "0.9.0"
 
 [dependencies.web-sys]
 version = "0.3.39"
