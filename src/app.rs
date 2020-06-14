@@ -1,4 +1,5 @@
 use crate::Page;
+use crate::html::Tag;
 
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -11,7 +12,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        console_error_panic_hook::set_once();
+        // console_error_panic_hook::set_once();
         Self {
             routes: BTreeMap::new(),
             start: None,
@@ -37,7 +38,6 @@ impl App {
                         .routes
                         .get_mut(self.start.unwrap())
                         .unwrap()
-                        .view()
                         .view(),
                     &x,
                 )
@@ -49,8 +49,24 @@ impl App {
                         .routes
                         .get_mut(self.start.unwrap())
                         .unwrap()
-                        .view()
                         .view(),
+                )
+                .unwrap();
+        }
+    }
+
+    pub fn render_single(tag: Tag) {
+        if let Some(x) = body().first_child() {
+            body()
+                .replace_child(
+                    tag.node(),
+                    &x,
+                )
+                .unwrap();
+        } else {
+            body()
+                .append_child(
+                    tag.node()
                 )
                 .unwrap();
         }

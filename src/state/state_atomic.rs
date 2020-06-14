@@ -1,11 +1,13 @@
-use crate::{channel, Receiver, Sender};
+use crate::{Channel, Component, Function};
 use super::State;
 
 use crossbeam::atomic::AtomicCell;
 use futures_intrusive::channel::StateId;
 use core::fmt::Display;
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
+use futures_intrusive::channel::shared::{state_broadcast_channel, StateSender, StateReceiver};
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign, Deref};
 use alloc::sync::Arc;
+use web_sys::{Node};
 
 #[derive(Clone)]
 pub struct StateAtomic<T>
@@ -13,33 +15,37 @@ where
     T: Display + Copy,
 {
     value: Arc<AtomicCell<T>>,
-    tx: Arc<Sender>,
-    rx: Arc<Receiver>,
+    tx: StateSender<Channel>,
+    rx: StateReceiver<Channel>,
 }
 
-impl<T> State<T> for StateAtomic<T>
+// impl<T> Copy for StateAtomic<T> {}
+
+impl<T> State for StateAtomic<T>
 where
     T: Display + Copy,
 {
-    type Value = AtomicCell<T>;
+    type Value = T;
+    type Pointer = Arc<AtomicCell<T>>;
+    type Channel = Channel;
 
-    fn value(&self) -> T {
+    fn value(&self) -> Self::Value {
         self.value.load()
     }
 
-    fn tx(&self) -> Arc<Sender> {
-        Arc::clone(&self.tx)
+    fn tx(&self) -> StateSender<Self::Channel> {
+        self.tx.clone()
     }
 
-    fn rx(&self) -> Arc<Receiver> {
-        Arc::clone(&self.rx)
+    fn rx(&self) -> StateReceiver<Self::Channel> {
+        self.rx.clone()
     }
 
-    fn put(&self, value: T) {
+    fn put(&self, value: Self::Value) {
         self.value.store(value);
     }
 
-    fn pointer(&self) -> Arc<Self::Value> {
+    fn pointer(&self) -> Self::Pointer {
         Arc::clone(&self.value)
     }
 
@@ -53,20 +59,19 @@ where
     T: Display + Copy,
 {
     pub fn new(value: T) -> Self {
-        let (tx, rx) = channel();
+        let (tx, rx) = state_broadcast_channel();
         Self {
             value: Arc::new(AtomicCell::new(value)),
-            tx: Arc::new(tx),
-            rx: Arc::new(rx),
+            tx,
+            rx,
         }
     }
 
-    pub fn from<U, V, F>(state: &U, mut func: F) -> Self
+    pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
-        U: State<V> + 'static,
-        V: Display + Clone + 'static,
-        F: FnMut(V) -> T + 'static,
-        T: From<V> + 'static,
+        U: State + 'static,
+        F: FnMut(U::Value) -> T + 'static,
+        T: From<U::Value> + 'static,
     {
         let value = func(state.value());
         let new = Self::new(value);
@@ -85,6 +90,25 @@ where
         });
 
         new
+    }
+}
+
+impl<T> Component for StateAtomic<T> where T: Display + Copy {
+    fn view(self) -> Function {
+        let function = self.value().view();
+        // function.rx = Some(self.rx());
+        wasm_bindgen_futures::spawn_local(change(function.node().clone(), self.rx()));
+        // let node = function
+
+        function
+    }
+}
+
+pub async fn change(node: Node, rx: StateReceiver<Channel>) {
+    let mut old = StateId::new();
+    while let Some((new, value)) = rx.receive(old).await {
+        node.set_node_value(Some(&value));
+        old = new;
     }
 }
 

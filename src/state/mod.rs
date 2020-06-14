@@ -1,24 +1,28 @@
-use crate::{Receiver, Sender};
+use crate::{Component, Function};
 
 use alloc::sync::Arc;
 use core::fmt::Display;
+use futures_intrusive::channel::shared::{StateReceiver, StateSender};
 
 pub use state_atomic::StateAtomic;
 pub use state_mutex::StateMutex;
+pub use state_vec::StateVec;
 
 pub mod state_atomic;
 pub mod state_mutex;
+pub mod state_vec;
 
-pub trait State<T>: Clone
-where
-    T: Display + Clone,
+pub trait State: Clone + Component
 {
-    type Value;
+    type Value: Clone + Display;
+    type Pointer;
+    type Channel: Clone;
 
-    fn value(&self) -> T;
-    fn tx(&self) -> Arc<Sender>;
-    fn rx(&self) -> Arc<Receiver>;
-    fn put(&self, value: T);
-    fn pointer(&self) -> Arc<Self::Value>;
+    fn value(&self) -> Self::Value;
+    fn tx(&self) -> StateSender<Self::Channel>;
+    fn rx(&self) -> StateReceiver<Self::Channel>;
+    fn put(&self, value: Self::Value);
+    fn pointer(&self) -> Self::Pointer;
     fn update(&self);
 }
+

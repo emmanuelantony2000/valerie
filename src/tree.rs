@@ -1,54 +1,82 @@
-use crate::Function;
+// use crate::Function;
 
-use intrusive_collections::intrusive_adapter;
-use intrusive_collections::{KeyAdapter, RBTree, RBTreeLink};
-use alloc::sync::Arc;
-use core::ops::{Deref, DerefMut};
+// use intrusive_collections::intrusive_adapter;
+// use intrusive_collections::{KeyAdapter, RBTree, RBTreeLink};
+// use alloc::sync::Arc;
+// use core::ops::{Deref, DerefMut};
 
-intrusive_adapter!(Adapter = Arc<TreeNode>: TreeNode { link: RBTreeLink });
-impl<'a> KeyAdapter<'a> for Adapter {
-    type Key = usize;
-    fn get_key(&self, x: &'a TreeNode) -> Self::Key {
-        x.value.id
-    }
-}
+// intrusive_adapter!(pub Adapter = Arc<TreeElement>: TreeElement { link: RBTreeLink });
+// impl<'a> KeyAdapter<'a> for Adapter {
+//     type Key = usize;
+//     fn get_key(&self, x: &'a TreeElement) -> Self::Key {
+//         x.id
+//     }
+// }
 
-#[derive()]
-struct Tree(RBTree<Adapter>);
+// pub struct Tree {
+//     tree: RBTree<Adapter>,
+//     count: usize,
+// }
 
-impl Deref for Tree {
-    type Target = RBTree<Adapter>;
+// impl Tree {
+//     pub fn new() -> Self {
+//         Self {
+//             tree: RBTree::new(Adapter::new()),
+//             count: 0,
+//         }
+//     }
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+//     pub fn push(&mut self, child: Function) {
+//         self.tree.insert(Arc::new(TreeElement {
+//             link: RBTreeLink::default(),
+            
+//                 id: {
+//                     if let Some(x) = self.tree.back().get() {
+//                         x.id + 1
+//                     } else {
+//                         0
+//                     }
+//                 },
+//                 function: child,
+            
+//         }));
+//     }
+// }
 
-impl DerefMut for Tree {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+// impl Deref for Tree {
+//     type Target = RBTree<Adapter>;
 
-#[derive(Default)]
-struct TreeNode {
-    link: RBTreeLink,
-    value: TreeElement,
-}
+//     fn deref(&self) -> &Self::Target {
+//         &self.tree
+//     }
+// }
 
-#[derive(Default)]
-struct TreeElement {
-    id: usize,
-    element: Either,
-}
+// impl DerefMut for Tree {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         &mut self.tree
+//     }
+// }
 
-enum Either {
-    Tree(Tree),
-    Value(Function),
-}
+// // #[derive(Default)]
+// pub struct TreeElement {
+//     link: RBTreeLink,
+//     id: usize,
+//     function: Function,
+// }
 
-impl Default for Either {
-    fn default() -> Self {
-        Self::Value(Function::default())
-    }
-}
+// // #[derive(Default)]
+// // struct TreeNode {
+// //     id: usize,
+// //     element: Function,
+// // }
+
+// // enum TreeNodeType {
+// //     Element(Function, Tree),
+// //     Text(Function),
+// // }
+
+// // impl Default for TreeNodeType {
+// //     fn default() -> Self {
+// //         Self::Text(Function::default())
+// //     }
+// // }
