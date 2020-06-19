@@ -3,9 +3,10 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
-use valerie::html::{button, div, p, br, Tag, ul, li};
-use valerie::{State, StateAtomic, StateVec};
+use valerie::html::Tag;
+use valerie::{br, button, div, li, p, ul};
 use valerie::{App, Component, Page};
+use valerie::{StateTrait, StateAtomic, StateVec};
 use wasm_bindgen::prelude::*;
 
 struct LaunchPage {
@@ -16,36 +17,36 @@ struct LaunchPage {
 
 impl Page for LaunchPage {
     fn view(&mut self) -> Tag {
-        div(&[]).push_loop(
+        div!().push_loop(
             |_| {
-                div(&[
-                    p(&[
-                        "Value ".view(),
-                        self.value.clone().view(),
-                        br().view(),
-                        "Double ".view(),
-                        self.double.clone().view(),
-                    ])
-                    .view(),
-                    button(&["Multiply".view()])
-                        .on_click((self.value.clone(), self.vec.clone()), move |(x, y)| {
+                div!(
+                    p!(
+                        "Value ",
+                        self.value.clone(),
+                        br!(),
+                        "Double ",
+                        self.double.clone()
+                    ),
+                    button!("Multiply").on_click(
+                        (self.value.clone(), self.vec.clone()),
+                        move |(x, y)| {
                             *x *= 2;
-                            y.push(x.value());
-                            x.update();
-                        })
-                        .view(),
-                    button(&["Divide".view()])
-                        .on_click((self.value.clone(), self.vec.clone()), move |(x, y)| {
+                            y.push(x.clone());
+                            y.push_atomic(x.value());
+                        }
+                    ),
+                    button!("Divide").on_click(
+                        (self.value.clone(), self.vec.clone()),
+                        move |(x, y)| {
                             *x /= 2;
-                            y.remove(y.len() - 1);
-                            x.update();
-                        })
-                        .view(),
-                    self.vec.view(ul(&[]).view(), |x| li(&[x.view()]).view()),
-                ])
-                .view()
+                            y.pop();
+                            y.pop();
+                        }
+                    ),
+                    self.vec.view(ul!(li!("Test")), |x| li!(x))
+                )
             },
-            1000,
+            2,
         )
     }
 }

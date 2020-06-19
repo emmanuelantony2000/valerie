@@ -4,22 +4,19 @@ extern crate alloc;
 
 pub use app::*;
 pub use channel::Channel;
-pub use function::{Event, Function, FunctionType};
-pub use state::{State, StateAtomic, StateMutex, StateVec};
-pub use page::Page;
 pub use component::Component;
-// use tree::Tree;
+pub use function::{Event, Function, FunctionType};
+pub use page::Page;
+pub use state::{StateTrait, StateAtomic, StateMutex, StateVec};
 
 pub mod app;
 pub mod channel;
+pub mod component;
 pub mod function;
 pub mod html;
-pub mod state;
-pub mod tree;
-pub mod component;
 pub mod page;
+pub mod state;
+pub mod macros;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
-// pub type Tree = trees::Tree<Function>;

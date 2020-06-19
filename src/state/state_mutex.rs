@@ -1,13 +1,13 @@
+use super::StateTrait;
 use crate::{Channel, Component, Function};
-use super::State;
 
-use parking_lot::Mutex;
-use futures_intrusive::channel::StateId;
-use core::fmt::Display;
-use futures_intrusive::channel::shared::{state_broadcast_channel, StateSender, StateReceiver};
 use alloc::sync::Arc;
-use web_sys::{Node};
+use core::fmt::Display;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
+use futures_intrusive::channel::shared::{state_broadcast_channel, StateReceiver, StateSender};
+use futures_intrusive::channel::StateId;
+use parking_lot::Mutex;
+use web_sys::Node;
 
 #[derive(Clone)]
 pub struct StateMutex<T>
@@ -19,7 +19,7 @@ where
     rx: StateReceiver<Channel>,
 }
 
-impl<T> State for StateMutex<T>
+impl<T> StateTrait for StateMutex<T>
 where
     T: Display + Clone,
 {
@@ -41,14 +41,11 @@ where
 
     fn put(&self, value: Self::Value) {
         *self.value.lock() = value;
+        self.update();
     }
 
     fn pointer(&self) -> Self::Pointer {
         Arc::clone(&self.value)
-    }
-
-    fn update(&self) {
-        while self.tx.send(self.value.lock().into()).is_err() {}
     }
 }
 
@@ -67,7 +64,7 @@ where
 
     pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
-        U: State + 'static,
+        U: StateTrait + 'static,
         F: FnMut(U::Value) -> T + 'static,
         T: From<U::Value> + 'static,
     {
@@ -89,13 +86,20 @@ where
 
         new
     }
+
+    fn update(&self) {
+        while self.tx.send(self.value.lock().into()).is_err() {}
+    }
 }
 
-impl<T> Component for StateMutex<T> where T: Display + Clone {
+impl<T> Component for StateMutex<T>
+where
+    T: Display + Clone,
+{
     fn view(self) -> Function {
         let function = self.value.lock().view();
-        // function.rx = Some(self.rx());
         wasm_bindgen_futures::spawn_local(change(function.node().clone(), self.rx()));
+
         function
     }
 }

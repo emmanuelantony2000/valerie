@@ -1,13 +1,13 @@
+use super::StateTrait;
 use crate::{Channel, Component, Function};
-use super::State;
 
-use crossbeam::atomic::AtomicCell;
-use futures_intrusive::channel::StateId;
-use core::fmt::Display;
-use futures_intrusive::channel::shared::{state_broadcast_channel, StateSender, StateReceiver};
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign, Deref};
 use alloc::sync::Arc;
-use web_sys::{Node};
+use core::fmt::Display;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
+use crossbeam::atomic::AtomicCell;
+use futures_intrusive::channel::shared::{state_broadcast_channel, StateReceiver, StateSender};
+use futures_intrusive::channel::StateId;
+use web_sys::Node;
 
 #[derive(Clone)]
 pub struct StateAtomic<T>
@@ -19,9 +19,7 @@ where
     rx: StateReceiver<Channel>,
 }
 
-// impl<T> Copy for StateAtomic<T> {}
-
-impl<T> State for StateAtomic<T>
+impl<T> StateTrait for StateAtomic<T>
 where
     T: Display + Copy,
 {
@@ -43,14 +41,11 @@ where
 
     fn put(&self, value: Self::Value) {
         self.value.store(value);
+        self.update();
     }
 
     fn pointer(&self) -> Self::Pointer {
         Arc::clone(&self.value)
-    }
-
-    fn update(&self) {
-        while self.tx.send(self.value().into()).is_err() {}
     }
 }
 
@@ -69,7 +64,7 @@ where
 
     pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
-        U: State + 'static,
+        U: StateTrait + 'static,
         F: FnMut(U::Value) -> T + 'static,
         T: From<U::Value> + 'static,
     {
@@ -91,14 +86,19 @@ where
 
         new
     }
+
+    fn update(&self) {
+        while self.tx.send(self.value().into()).is_err() {}
+    }
 }
 
-impl<T> Component for StateAtomic<T> where T: Display + Copy {
+impl<T> Component for StateAtomic<T>
+where
+    T: Display + Copy,
+{
     fn view(self) -> Function {
         let function = self.value().view();
-        // function.rx = Some(self.rx());
         wasm_bindgen_futures::spawn_local(change(function.node().clone(), self.rx()));
-        // let node = function
 
         function
     }

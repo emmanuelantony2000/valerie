@@ -1,16 +1,14 @@
-// use crate::Tree;
-use crate::Channel;
+use crate::{Channel, Component};
 
 use alloc::boxed::Box;
-use alloc::sync::Arc;
 use alloc::string::String;
-use futures_intrusive::channel::StateId;
+use alloc::sync::Arc;
+use core::ops::Deref;
 use futures_intrusive::channel::shared::StateReceiver;
+use futures_intrusive::channel::StateId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Element, Text, Node};
-use alloc::vec::Vec;
-use core::ops::Deref;
+use web_sys::{Element, Node, Text};
 
 pub struct Event {
     event: &'static str,
@@ -19,10 +17,7 @@ pub struct Event {
 
 impl Event {
     pub fn new(event: &'static str, callback: Box<dyn FnMut()>) -> Self {
-        Self {
-            event,
-            callback
-        }
+        Self { event, callback }
     }
 }
 
@@ -40,9 +35,6 @@ pub enum FunctionStore {
 #[derive(Clone)]
 pub struct Function {
     node: FunctionStore,
-    // children: Option<Tree>,
-    // pub rx: Option<Arc<Receiver>>,
-    // pub events: Vec<Event>,
 }
 
 impl Function {
@@ -50,37 +42,27 @@ impl Function {
         match function_type {
             FunctionType::Element(x) => Self {
                 node: FunctionStore::Element(create_element(x)),
-                // children: None,
-                // rx: None,
-                // events: Vec::new(),
             },
             FunctionType::Text(x) => Self {
                 node: FunctionStore::Text(document().create_text_node(&x)),
-                // children: None,
-                // rx: None
-                // events: Vec::new(),
             },
         }
-        // Self {
-        //     node: None,
-        //     rx: None,
-        //     events: Vec::new(),
-        // }
     }
 
-    pub fn push_child(&self, child: &Function) {
+    pub fn push_child<T>(&self, child: &T)
+    where
+        T: Deref<Target = Node>,
+    {
         if let FunctionStore::Element(x) = &self.node {
-            x.append_child(match &child.node {
-                FunctionStore::Element(x) => &x,
-                FunctionStore::Text(x) => &x,
-            }).unwrap();
+            x.append_child(&child).unwrap();
         }
-    } 
+    }
 
     pub fn add_event(&self, event: Event) {
-        let Event { event , callback } = event;
+        let Event { event, callback } = event;
         let x = Closure::wrap(callback);
-        self.node().add_event_listener_with_callback(event, x.as_ref().unchecked_ref())
+        self.node()
+            .add_event_listener_with_callback(event, x.as_ref().unchecked_ref())
             .unwrap();
         x.forget();
     }
@@ -95,24 +77,9 @@ impl Function {
     pub fn element(&self) -> Option<Element> {
         match &self.node {
             FunctionStore::Element(x) => Some(x.clone()),
-            _ => None
+            _ => None,
         }
     }
-
-    // pub fn node(&mut self, node: Arc<Node>) {
-    //     // self.node = Some(Arc::clone(&node));
-
-    //     while let Some(Event {event, callback}) = self.events.pop() {
-    //         let x = Closure::wrap(callback);
-    //         node.add_event_listener_with_callback(event, x.as_ref().unchecked_ref())
-    //             .unwrap();
-    //         x.forget();
-    //     }
-
-    //     if self.rx.is_some() {
-    //         wasm_bindgen_futures::spawn_local(change(Arc::clone(&node), self.rx.take().unwrap()));
-    //     }
-    // }
 }
 
 impl Deref for Function {
@@ -120,6 +87,12 @@ impl Deref for Function {
 
     fn deref(&self) -> &Self::Target {
         self.node()
+    }
+}
+
+impl Component for Function {
+    fn view(self) -> Self {
+        self
     }
 }
 

@@ -1,5 +1,5 @@
-use crate::Page;
 use crate::html::Tag;
+use crate::Page;
 
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -34,41 +34,22 @@ impl App {
         if let Some(x) = body().first_child() {
             body()
                 .replace_child(
-                    &self
-                        .routes
-                        .get_mut(self.start.unwrap())
-                        .unwrap()
-                        .view(),
+                    &self.routes.get_mut(self.start.unwrap()).unwrap().view(),
                     &x,
                 )
                 .unwrap();
         } else {
             body()
-                .append_child(
-                    &self
-                        .routes
-                        .get_mut(self.start.unwrap())
-                        .unwrap()
-                        .view(),
-                )
+                .append_child(&self.routes.get_mut(self.start.unwrap()).unwrap().view())
                 .unwrap();
         }
     }
 
     pub fn render_single(tag: Tag) {
         if let Some(x) = body().first_child() {
-            body()
-                .replace_child(
-                    tag.node(),
-                    &x,
-                )
-                .unwrap();
+            body().replace_child(tag.node(), &x).unwrap();
         } else {
-            body()
-                .append_child(
-                    tag.node()
-                )
-                .unwrap();
+            body().append_child(tag.node()).unwrap();
         }
     }
 }
