@@ -1,5 +1,5 @@
 [package]
-name = "hello_world"
+name = "time_counter"
 version = "0.1.0"
 authors = ["Emmanuel Antony <emmanuelantony2000@gmail.com>"]
 edition = "2018"
@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 valerie = { path = "../../../valerie" }
+wasm-timer = "0.2.4"
 
 [profile.release]
 lto = true

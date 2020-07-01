@@ -1,28 +1,28 @@
-use super::{StateTrait, StateAtomic, StateMutex};
-use crate::Function;
-
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::Display;
 use core::iter::FromIterator;
-use core::ops::Deref;
+// use core::ops::{Index, IndexMut};
+
 use futures_intrusive::channel::shared::{unbuffered_channel, Sender};
 use parking_lot::RwLock;
+
+use super::{StateAtomic, StateMutex, StateTrait};
 
 #[derive(Clone)]
 enum Change<T>
 where
-    T: StateTrait + Send,
+    T: Send,
 {
     Insert(usize, T),
     Push(T),
     Remove(usize),
 }
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct StateVec<T>
 where
-    T: StateTrait + Send + 'static,
+    T: Send + 'static,
 {
     value: Arc<RwLock<Vec<T>>>,
     tx: Arc<RwLock<Vec<Sender<Change<T>>>>>,
@@ -30,7 +30,7 @@ where
 
 impl<T> StateVec<T>
 where
-    T: StateTrait + Send,
+    T: Send,
 {
     pub fn new() -> Self {
         Self {
@@ -38,51 +38,57 @@ where
             tx: Arc::new(RwLock::new(Vec::new())),
         }
     }
+}
 
-    pub fn view<F, U, V>(&self, encloser: U, object: F) -> U
+impl<T> StateVec<T>
+where
+    T: StateTrait + Send,
+{
+    pub fn view<F, U, V>(&self, enclose: U, object: F) -> U
     where
         F: FnOnce(T) -> V,
         F: Clone + 'static,
-        U: Deref<Target = Function>,
-        V: Deref<Target = Function> + 'static,
+        U: AsRef<web_sys::Node>,
+        V: AsRef<web_sys::Node> + 'static,
     {
         let mut nodes = Vec::with_capacity(self.len());
         for i in self.value.read().iter() {
             nodes.push(object.clone()(i.clone()));
-            encloser.append_child(&nodes.last().unwrap()).unwrap();
+            enclose
+                .as_ref()
+                .append_child(nodes.last().unwrap().as_ref())
+                .unwrap();
         }
 
-        if let Some(element) = encloser.element() {
-            let (tx, rx) = unbuffered_channel();
-            self.tx.write().push(tx);
-            wasm_bindgen_futures::spawn_local(async move {
-                while let Some(change) = rx.receive().await {
-                    match change {
-                        Change::Insert(i, x) => {
-                            nodes.insert(i, object.clone()(x));
-                            element
-                                .insert_before(
-                                    &nodes[i],
-                                    Some(&element.children().item(i as u32).unwrap()),
-                                )
-                                .unwrap();
-                        }
+        let element = enclose.as_ref().clone();
+        let (tx, rx) = unbuffered_channel();
+        self.tx.write().push(tx);
+        wasm_bindgen_futures::spawn_local(async move {
+            while let Some(change) = rx.receive().await {
+                match change {
+                    Change::Insert(i, x) => {
+                        nodes.insert(i, object.clone()(x));
+                        element
+                            .insert_before(&nodes[i].as_ref(), Some(&nodes[i + 1].as_ref()))
+                            .unwrap();
+                    }
 
-                        Change::Push(x) => {
-                            nodes.push(object.clone()(x));
-                            element.append_child(&nodes.last().unwrap()).unwrap();
-                        }
+                    Change::Push(x) => {
+                        nodes.push(object.clone()(x));
+                        element
+                            .append_child(&nodes.last().unwrap().as_ref())
+                            .unwrap();
+                    }
 
-                        Change::Remove(i) => {
-                            let node = nodes.remove(i);
-                            element.remove_child(&node).unwrap();
-                        }
+                    Change::Remove(i) => {
+                        let node = nodes.remove(i);
+                        element.remove_child(&node.as_ref()).unwrap();
                     }
                 }
-            });
-        }
+            }
+        });
 
-        encloser
+        enclose
     }
 
     pub fn push(&self, value: T) {
@@ -100,6 +106,18 @@ where
         self.update(Change::Remove(index));
     }
 
+    pub fn remove_elem(&self, elem: T) {
+        web_sys::console::log_1(&alloc::format!("Elem {}", elem.value()).into());
+        web_sys::console::log_1(&alloc::format!("Equals").into());
+        self.value
+            .read()
+            .iter()
+            .for_each(|x| web_sys::console::log_1(&alloc::format!("{}", x == &elem).into()));
+
+        let index = self.value.read().iter().position(|x| x == &elem).unwrap();
+        self.remove(index);
+    }
+
     pub fn pop(&self) {
         self.value.write().pop();
         self.update(Change::Remove(self.len()));
@@ -114,13 +132,21 @@ where
     }
 
     fn update(&self, change: Change<T>) {
-        self.tx.read().iter().for_each(|tx| {
-            let tx = tx.clone();
-            let change = change.clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                tx.send(change).await.unwrap_or(());
+        self.value
+            .read()
+            .iter()
+            .for_each(|x| web_sys::console::log_1(&alloc::format!("{}", x.value()).into()));
+        web_sys::console::log_1(&alloc::format!("That's it!").into());
+
+        self.tx
+            .read()
+            .iter()
+            .map(|x| (x.clone(), change.clone()))
+            .for_each(|(tx, change)| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    tx.send(change).await.unwrap_or(());
+                });
             });
-        });
     }
 }
 
@@ -153,6 +179,18 @@ where
             .write()
             .insert(index, StateMutex::new(value.clone()));
         self.update(Change::Insert(index, StateMutex::new(value)));
+    }
+}
+
+impl<T> Clone for StateVec<T>
+where
+    T: Send + 'static,
+{
+    fn clone(&self) -> Self {
+        Self {
+            value: Arc::clone(&self.value),
+            tx: Arc::clone(&self.tx),
+        }
     }
 }
 
@@ -228,3 +266,9 @@ where
         }
     }
 }
+
+// impl Index for StateVec<T> where T: Send {
+//     type Output = &T;
+//
+//     fn index(&self, index: Idx)
+// }f

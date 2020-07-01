@@ -2,6 +2,13 @@
 name = "valerie"
 version = "0.1.0"
 authors = ["Emmanuel Antony <emmanuelantony2000@gmail.com>"]
+description = "Rust font-end framework for building web apps."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/emmanuelantony2000/valerie"
+homepage = "https://github.com/emmanuelantony2000/valerie"
+keywords = ["wasm", "webassembly", "frontend", "framework", "web"]
+categories = ["wasm", "web-programming"]
 edition = "2018"
 
 [lib]
@@ -27,8 +34,11 @@ features = [
     "Node",
     "Element",
     "HtmlElement",
+    "HtmlDataElement",
+    "HtmlInputElement",
     "Text",
     "HtmlCollection",
+    "console"
 ]
 
 [dev-dependencies]

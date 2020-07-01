@@ -1,19 +1,16 @@
-use super::StateTrait;
-use crate::{Channel, Component, Function};
-
 use alloc::sync::Arc;
-use core::fmt::Display;
+use core::fmt;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
-use futures_intrusive::channel::shared::{state_broadcast_channel, StateReceiver, StateSender};
-use futures_intrusive::channel::StateId;
-use parking_lot::Mutex;
-use web_sys::Node;
 
-#[derive(Clone)]
-pub struct StateMutex<T>
-where
-    T: Display + Clone,
-{
+use futures_intrusive::channel::shared::{state_broadcast_channel, StateReceiver, StateSender};
+use parking_lot::Mutex;
+
+use crate::channel::Channel;
+use crate::component::Component;
+
+use super::StateTrait;
+
+pub struct StateMutex<T> {
     value: Arc<Mutex<T>>,
     tx: StateSender<Channel>,
     rx: StateReceiver<Channel>,
@@ -21,10 +18,10 @@ where
 
 impl<T> StateTrait for StateMutex<T>
 where
-    T: Display + Clone,
+    T: fmt::Display + Clone,
 {
     type Value = T;
-    type Pointer = Arc<Mutex<T>>;
+    type Pointer = Mutex<T>;
     type Channel = Channel;
 
     fn value(&self) -> Self::Value {
@@ -44,15 +41,16 @@ where
         self.update();
     }
 
-    fn pointer(&self) -> Self::Pointer {
+    fn pointer(&self) -> Arc<Self::Pointer> {
         Arc::clone(&self.value)
+    }
+
+    fn update(&self) {
+        while self.tx.send(self.value.lock().into()).is_err() {}
     }
 }
 
-impl<T> StateMutex<T>
-where
-    T: Display + Clone,
-{
+impl<T> StateMutex<T> {
     pub fn new(value: T) -> Self {
         let (tx, rx) = state_broadcast_channel();
         Self {
@@ -61,7 +59,12 @@ where
             rx,
         }
     }
+}
 
+impl<T> StateMutex<T>
+where
+    T: fmt::Display + Clone,
+{
     pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
         U: StateTrait + 'static,
@@ -71,50 +74,45 @@ where
         let value = func(state.value());
         let new = Self::new(value);
 
-        let new_move = new.clone();
-        let state_value = state.clone();
-        let rx = state.rx();
-        wasm_bindgen_futures::spawn_local(async move {
-            let mut old = StateId::new();
-            while let Some((new, _)) = rx.receive(old).await {
-                new_move.put(func(state_value.value()));
-                new_move.update();
-
-                old = new;
-            }
-        });
-
-        new
-    }
-
-    fn update(&self) {
-        while self.tx.send(self.value.lock().into()).is_err() {}
+        super::from(new, state, func)
     }
 }
 
 impl<T> Component for StateMutex<T>
 where
-    T: Display + Clone,
+    T: fmt::Display + Clone,
 {
-    fn view(self) -> Function {
-        let function = self.value.lock().view();
-        wasm_bindgen_futures::spawn_local(change(function.node().clone(), self.rx()));
+    type Type = web_sys::Text;
 
-        function
+    fn view(self) -> Self::Type {
+        let elem = self.value.lock().view();
+        wasm_bindgen_futures::spawn_local(super::change(elem.clone(), self.rx()));
+
+        elem
     }
 }
 
-pub async fn change(node: Node, rx: StateReceiver<Channel>) {
-    let mut old = StateId::new();
-    while let Some((new, value)) = rx.receive(old).await {
-        node.set_node_value(Some(&value));
-        old = new;
+impl<T> PartialEq for StateMutex<T> {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.value, &other.value)
+    }
+}
+
+impl<T> Eq for StateMutex<T> {}
+
+impl<T> Clone for StateMutex<T> {
+    fn clone(&self) -> Self {
+        Self {
+            value: Arc::clone(&self.value),
+            tx: self.tx.clone(),
+            rx: self.rx.clone(),
+        }
     }
 }
 
 impl<T, U> Add<U> for StateMutex<T>
 where
-    T: Display + Clone + Add<U> + AddAssign<U>,
+    T: fmt::Display + Clone + Add<U> + AddAssign<U>,
 {
     type Output = Self;
 
@@ -126,7 +124,7 @@ where
 
 impl<T, U> AddAssign<U> for StateMutex<T>
 where
-    T: Display + Clone + AddAssign<U>,
+    T: fmt::Display + Clone + AddAssign<U>,
 {
     fn add_assign(&mut self, other: U) {
         *self.value.lock() += other;
@@ -135,7 +133,7 @@ where
 
 impl<T, U> Div<U> for StateMutex<T>
 where
-    T: Display + Clone + Div<U> + DivAssign<U>,
+    T: fmt::Display + Clone + Div<U> + DivAssign<U>,
 {
     type Output = Self;
 
@@ -147,7 +145,7 @@ where
 
 impl<T, U> DivAssign<U> for StateMutex<T>
 where
-    T: Display + Clone + DivAssign<U>,
+    T: fmt::Display + Clone + DivAssign<U>,
 {
     fn div_assign(&mut self, other: U) {
         *self.value.lock() /= other;
@@ -156,7 +154,7 @@ where
 
 impl<T, U> Mul<U> for StateMutex<T>
 where
-    T: Display + Clone + Mul<U> + MulAssign<U>,
+    T: fmt::Display + Clone + Mul<U> + MulAssign<U>,
 {
     type Output = Self;
 
@@ -168,7 +166,7 @@ where
 
 impl<T, U> MulAssign<U> for StateMutex<T>
 where
-    T: Display + Clone + MulAssign<U>,
+    T: fmt::Display + Clone + MulAssign<U>,
 {
     fn mul_assign(&mut self, other: U) {
         *self.value.lock() *= other;
@@ -177,7 +175,7 @@ where
 
 impl<T, U> Rem<U> for StateMutex<T>
 where
-    T: Display + Clone + Rem<U> + RemAssign<U>,
+    T: fmt::Display + Clone + Rem<U> + RemAssign<U>,
 {
     type Output = Self;
 
@@ -189,7 +187,7 @@ where
 
 impl<T, U> RemAssign<U> for StateMutex<T>
 where
-    T: Display + Clone + RemAssign<U>,
+    T: fmt::Display + Clone + RemAssign<U>,
 {
     fn rem_assign(&mut self, other: U) {
         *self.value.lock() %= other;
@@ -198,7 +196,7 @@ where
 
 impl<T, U> Sub<U> for StateMutex<T>
 where
-    T: Display + Clone + Sub<U> + SubAssign<U>,
+    T: fmt::Display + Clone + Sub<U> + SubAssign<U>,
 {
     type Output = Self;
 
@@ -210,7 +208,7 @@ where
 
 impl<T, U> SubAssign<U> for StateMutex<T>
 where
-    T: Display + Clone + SubAssign<U>,
+    T: fmt::Display + Clone + SubAssign<U>,
 {
     fn sub_assign(&mut self, other: U) {
         *self.value.lock() -= other;

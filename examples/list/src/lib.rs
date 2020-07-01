@@ -1,81 +1,38 @@
-#![no_std]
+use valerie::prelude::components::*;
+use valerie::prelude::*;
 
-#[macro_use]
-extern crate alloc;
+fn launch_page() -> web_sys::Node {
+    let list = StateVec::new();
+    let num = StateAtomic::new(0isize);
+    let double = StateAtomic::from(&num, |x| x * 2);
 
-use alloc::boxed::Box;
-use alloc::sync::Arc;
-use core::sync::atomic::{AtomicU64, Ordering};
-use valerie::html::{Button, Div, Html, Paragraph};
-use valerie::{channel, StateReceiver, StateSender};
-use valerie::{App, Component, Page};
-use wasm_bindgen::prelude::*;
-
-struct LaunchPage {
-    value: Arc<AtomicU64>,
-    tx: StateSender<()>,
-    rx: StateReceiver<()>,
+    div!(
+        div!(
+            p!("There are two variable here"),
+            p!("Both are states, the second one \'double\' derives its info from the first state"),
+            p!("The second value is the double of first value, though we never change the second value"),
+            p!("It also increments and decrements the list when you press +1 and -1")
+        ),
+        button!("first + 1")
+            .on_event("click", (num.clone(), list.clone()), |(x, list), _| {
+                *x += 1;
+                list.push_atomic(x.value());
+            }),
+        button!("first - 1")
+            .on_event("click", (num.clone(), list.clone()), |(x, list), _| {
+                // list.clone().remove(list.clone().into_iter().position(|y| y.value() == x.value()).unwrap()); // Not working
+                list.remove_elem(x.clone());
+                *x -= 1;
+            }),
+        div!(
+            p!("Value: ", num),
+            p!("Double: ", double)
+        ),
+        list.view(ul!(), |x| li!(x))
+    ).into()
 }
 
-impl Page for LaunchPage {
-    fn view(&mut self) -> Html {
-        Html::new().push_loop(
-            |_| {
-                let value1 = self.value();
-                let value2 = self.value();
-                let tx1 = self.tx();
-                let tx2 = self.tx();
-
-                Div::new()
-                    .push(vec![
-                        Paragraph::new()
-                            .push(vec!["<strong>Value </strong>".view()])
-                            .value(Arc::clone(&self.value), self.rx.clone())
-                            .view(),
-                        Button::new()
-                            .push(vec!["Multiply".view()])
-                            .on_click(Box::new(move || {
-                                value1.fetch_add(value1.load(Ordering::SeqCst), Ordering::SeqCst);
-                                while tx1.send(()).is_err() {}
-                            }))
-                            .view(),
-                        Button::new()
-                            .push(vec!["Divide".view()])
-                            .on_click(Box::new(move || {
-                                value2.fetch_sub(value2.load(Ordering::SeqCst)/2, Ordering::SeqCst);
-                                while tx2.send(()).is_err() {}
-                            }))
-                            .view(),
-                    ])
-                    .view()
-            },
-            100,
-        )
-    }
-}
-
-impl LaunchPage {
-    fn new() -> Self {
-        let (tx, rx) = channel();
-        Self {
-            value: Arc::new(AtomicU64::new(1)),
-            tx,
-            rx,
-        }
-    }
-
-    fn value(&self) -> Arc<AtomicU64> {
-        Arc::clone(&self.value)
-    }
-
-    fn tx(&self) -> StateSender<()> {
-        self.tx.clone()
-    }
-}
-
-#[wasm_bindgen(start)]
+#[valerie(start)]
 pub fn run() {
-    App::new()
-        .push("hello_world", Box::new(LaunchPage::new()))
-        .render();
+    App::new().push("list", launch_page).render();
 }
