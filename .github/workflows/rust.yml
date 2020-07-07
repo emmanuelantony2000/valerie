@@ -20,10 +20,10 @@ jobs:
           command: build
           args: --target wasm32-unknown-unknown
       - uses: action-rs/install@v0.1
-          with:
-            crate: wasm-pack
-            version: latest
-            use-tool-cache: true
+        with:
+          crate: wasm-pack
+          version: latest
+          use-tool-cache: true
       - run: wasm-pack build
 
   test:
@@ -39,10 +39,10 @@ jobs:
         with:
           command: test
       - uses: action-rs/install@v0.1
-          with:
-            crate: wasm-pack
-            version: latest
-            use-tool-cache: true
+        with:
+          crate: wasm-pack
+          version: latest
+          use-tool-cache: true
       - run: wasm-pack test --chrome --firefox --headless
 
   clippy:
