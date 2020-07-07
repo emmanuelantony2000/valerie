@@ -10,6 +10,9 @@ use crate::component::Component;
 
 use super::StateTrait;
 
+/// State variable to be used with types that implement `Copy`
+///
+/// This uses `AtomicCell` of crossbeam internally.
 pub struct StateAtomic<T> {
     value: Arc<AtomicCell<T>>,
     tx: StateSender<Channel>,
@@ -21,7 +24,7 @@ where
     T: fmt::Display + Copy,
 {
     type Value = T;
-    type Pointer = AtomicCell<T>;
+    type Store = AtomicCell<T>;
     type Channel = Channel;
 
     fn value(&self) -> Self::Value {
@@ -41,7 +44,7 @@ where
         self.update();
     }
 
-    fn pointer(&self) -> Arc<Self::Pointer> {
+    fn pointer(&self) -> Arc<Self::Store> {
         Arc::clone(&self.value)
     }
 
@@ -51,6 +54,25 @@ where
 }
 
 impl<T> StateAtomic<T> {
+    /// Make a new `StateAtomic` variable.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let state = StateAtomic::new(0);
+    /// h3!(state)
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn new(value: T) -> Self {
         let (tx, rx) = state_broadcast_channel();
         Self {
@@ -65,6 +87,30 @@ impl<T> StateAtomic<T>
 where
     T: fmt::Display + Copy,
 {
+    /// Derive a `StateAtomic` variable from another variable implementing `StateTrait`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let counter = StateAtomic::new(1);
+    /// let double_counter = StateAtomic::from(&counter, |x| x * 2);
+    ///
+    /// div!(
+    ///     h3!("Single count ", counter),
+    ///     h3!("Double count ", double_counter)
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
         U: StateTrait + 'static,
@@ -78,19 +124,17 @@ where
     }
 }
 
-impl<T> StateAtomic<T> where T: fmt::Display + Copy {}
+impl<T> Component for StateAtomic<T> where T: fmt::Display + Copy {}
 
-impl<T> Component for StateAtomic<T>
+impl<T> From<StateAtomic<T>> for crate::Node
 where
     T: fmt::Display + Copy,
 {
-    type Type = web_sys::Text;
+    fn from(x: StateAtomic<T>) -> Self {
+        let elem: Self = x.value().into();
+        wasm_bindgen_futures::spawn_local(super::change(elem.clone(), x.rx()));
 
-    fn view(self) -> Self::Type {
-        let view = self.value().view();
-        wasm_bindgen_futures::spawn_local(super::change(view.clone(), self.rx()));
-
-        view
+        elem
     }
 }
 

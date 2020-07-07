@@ -10,12 +10,12 @@
 //! - No Virtual DOM.
 //! - UI can be made simply, by following an MVVM architecture rather an MVC architecture.
 //! - Use state variables to update the UI where required.
-//! - Written without any unsafe code and `nightly` rust required.
+//! - Written without any unsafe code and `nightly` Rust required.
 //!
 //! ## Architecture
 //!
 //! - Every UI element has to implement the `Component` trait.
-//! - A page is a function which returns a `web_sys::Node`.
+//! - A page is a function which returns a `Node`.
 //! - Two type of State variables
 //! - `StateAtomic` for types implementing `Copy`.
 //! - `StateMutex` for types implementing `Clone`.
@@ -53,31 +53,31 @@
 //!
 //! Take a look at `wasm-pack` docs for more options.
 //!
-//! ## Examples
+//! # Examples
 //!
 //! ### Hello world
 //!
-//! ```rust
+//! ```
 //! use valerie::prelude::components::*;
 //! use valerie::prelude::*;
 //!
-//! fn launch_page() -> web_sys::Node {
+//! fn ui() -> Node {
 //!     h1!("Hello World").into()
 //! }
 //!
 //! #[valerie(start)]
 //! pub fn run() {
-//!     App::new().push("hello_world", launch_page).render();
+//!     App::render_single(ui());
 //! }
 //! ```
 //!
 //! ### Add and Subtract one using a Button
 //!
-//! ```rust
+//! ```
 //! use valerie::prelude::components::*;
 //! use valerie::prelude::*;
 //!
-//! fn launch_page() -> web_sys::Node {
+//! fn ui() -> Node {
 //!     let value = StateAtomic::new(0isize);
 //!
 //!     div!(
@@ -96,20 +96,18 @@
 //!
 //! #[valerie(start)]
 //! pub fn run() {
-//!     App::new()
-//!         .push("list_add_remove_items", launch_page)
-//!         .render();
+//!     App::render_single(ui());
 //! }
 //! ```
 //!
 //! ### Time Counter
 //!
-//! ```rust
+//! ```
 //! use valerie::prelude::components::*;
 //! use valerie::prelude::*;
 //! use wasm_timer::Delay;
 //!
-//! fn launch_page() -> web_sys::Node {
+//! fn ui() -> Node {
 //!     let timer = StateAtomic::new(0);
 //!
 //!     execute(time(1, timer.clone()));
@@ -127,26 +125,28 @@
 //!
 //! #[valerie(start)]
 //! pub fn run() {
-//!     App::new().push("time_counter", launch_page).render();
+//!     App::render_single(ui());
 //! }
 //! ```
 
 extern crate alloc;
 
+mod app;
+mod channel;
 mod component;
 mod function;
 mod macros;
+mod node;
+mod tag;
 
-/// Contains the `App` struct for creating the `App` instance
-pub mod app;
-/// Contains the `Channel` struct which is the message passed from the `State`
-pub mod channel;
 /// Contains the structs for defining States
 pub mod state;
-/// To make HTML Tags
-pub mod tag;
 
+pub use app::App;
+pub use channel::Channel;
 pub use component::Component;
+pub use node::Node;
+pub use tag::Tag;
 
 /// The `prelude` module
 pub mod prelude {
@@ -155,8 +155,7 @@ pub mod prelude {
     pub use wasm_bindgen_futures::spawn_local as execute;
     pub use web_sys;
 
-    pub use app::*;
-    pub use component::Component;
+    pub use crate::{App, Component, Node, Tag};
     pub use state::{StateAtomic, StateMutex, StateTrait, StateVec};
 
     use crate::*;

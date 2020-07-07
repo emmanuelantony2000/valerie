@@ -1,13 +1,13 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> web_sys::Node {
+fn launch_page() -> Node {
     let text = StateMutex::new(String::new());
     let list = StateVec::new();
 
     div!(
         div!(
-            input!("text",)
+            input!("text")
                 .double_bind(text.clone())
                 .placeholder("Type something here"),
             button!("Insert").on_event("click", (text.clone(), list.clone()), |(text, list), _| {
@@ -15,25 +15,21 @@ fn launch_page() -> web_sys::Node {
                 text.put(String::new());
             })
         ),
-        list.clone().view(ol!(), |x| li!(
-            x.clone(),
-            button!("Remove").on_event("click", (x, list), |(elem, list), _| {
-                // list.clone().remove(
-                //     list.clone()
-                //         .into_iter()
-                //         .position(|y| y.value() == elem.value())
-                //         .unwrap(),
-                // )
-                list.remove_elem(elem.clone()); // Currently not working...
-            })
-        ))
+        list.clone().view(ul!(), |x| list_item(x, list).into())
     )
     .into()
 }
 
+fn list_item(x: StateMutex<String>, list: StateVec<StateMutex<String>>) -> impl Component {
+    li!(
+        x.clone(),
+        button!("Remove").on_event("click", (x, list), |(x, list), _| {
+            list.remove_elem(x.clone());
+        })
+    )
+}
+
 #[valerie(start)]
 pub fn run() {
-    App::new()
-        .push("list_add_remove_items", launch_page)
-        .render();
+    App::render_single(launch_page());
 }

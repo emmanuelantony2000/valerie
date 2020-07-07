@@ -1,19 +1,19 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> web_sys::Node {
+fn launch_page() -> Node {
     let value = StateMutex::new(String::new());
-    let count = StateAtomic::new(0);
+    let count = StateAtomic::new(0usize);
 
     div!(
-        p!("Value: ", value.clone()),
-        p!("Length: ", count.clone()),
-        input!("text",)
+        h3!("Value: ", value.clone()),
+        h3!("Length: ", count.clone()),
+        input!("text")
             .id("text-field")
             .double_bind(value.clone())
             .bind_func(count.clone(), |x| x.len()),
         br!(),
-        input!("text",)
+        input!("text")
             .id("text-field")
             .double_bind(value)
             .bind_func(count, |x| x.len())
@@ -23,5 +23,5 @@ fn launch_page() -> web_sys::Node {
 
 #[valerie(start)]
 pub fn run() {
-    App::new().push("input_state", launch_page).render();
+    App::render_single(launch_page());
 }

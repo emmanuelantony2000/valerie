@@ -1,8 +1,8 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> web_sys::Node {
-    let list = StateVec::new();
+fn launch_page() -> Node {
+    let list: StateVec<StateAtomic<isize>> = StateVec::new();
     let num = StateAtomic::new(0isize);
     let double = StateAtomic::from(&num, |x| x * 2);
 
@@ -16,12 +16,15 @@ fn launch_page() -> web_sys::Node {
         button!("first + 1")
             .on_event("click", (num.clone(), list.clone()), |(x, list), _| {
                 *x += 1;
-                list.push_atomic(x.value());
+                if list.clone().into_iter().find(|y| y.value() == x.value()).is_none() {
+                    list.push_atomic(x.value());
+                }
             }),
         button!("first - 1")
             .on_event("click", (num.clone(), list.clone()), |(x, list), _| {
-                // list.clone().remove(list.clone().into_iter().position(|y| y.value() == x.value()).unwrap()); // Not working
-                list.remove_elem(x.clone());
+                if let Some(pos) = list.clone().into_iter().position(|y| y.value() == x.value()) {
+                    list.remove(pos);
+                }
                 *x -= 1;
             }),
         div!(
@@ -34,5 +37,5 @@ fn launch_page() -> web_sys::Node {
 
 #[valerie(start)]
 pub fn run() {
-    App::new().push("list", launch_page).render();
+    App::render_single(launch_page());
 }

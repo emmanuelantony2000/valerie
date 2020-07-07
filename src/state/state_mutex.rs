@@ -10,6 +10,9 @@ use crate::component::Component;
 
 use super::StateTrait;
 
+/// State variable to be used with types that implement `Clone`
+///
+/// This uses `Mutex` of parking_lot internally.
 pub struct StateMutex<T> {
     value: Arc<Mutex<T>>,
     tx: StateSender<Channel>,
@@ -21,7 +24,7 @@ where
     T: fmt::Display + Clone,
 {
     type Value = T;
-    type Pointer = Mutex<T>;
+    type Store = Mutex<T>;
     type Channel = Channel;
 
     fn value(&self) -> Self::Value {
@@ -41,7 +44,7 @@ where
         self.update();
     }
 
-    fn pointer(&self) -> Arc<Self::Pointer> {
+    fn pointer(&self) -> Arc<Self::Store> {
         Arc::clone(&self.value)
     }
 
@@ -51,6 +54,25 @@ where
 }
 
 impl<T> StateMutex<T> {
+    /// Make a new `StateMutex` variable.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let state = StateMutex::new(String::from("Hello, World!"));
+    /// h3!(state)
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn new(value: T) -> Self {
         let (tx, rx) = state_broadcast_channel();
         Self {
@@ -65,6 +87,34 @@ impl<T> StateMutex<T>
 where
     T: fmt::Display + Clone,
 {
+    /// Derive a `StateAtomic` variable from another variable implementing `StateTrait`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let string = StateMutex::new(String::from("This is a test."));
+    /// let length = StateMutex::from(&string, |x| {
+    ///     let mut result = String::from("The length is ");
+    ///     result.push_str(&x.len().to_string());
+    ///     result
+    /// });
+    ///
+    /// div!(
+    ///     h3!("String: ", string),
+    ///     h3!(length)
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
         U: StateTrait + 'static,
@@ -78,15 +128,15 @@ where
     }
 }
 
-impl<T> Component for StateMutex<T>
+impl<T> Component for StateMutex<T> where T: fmt::Display + Clone {}
+
+impl<T> From<StateMutex<T>> for crate::Node
 where
     T: fmt::Display + Clone,
 {
-    type Type = web_sys::Text;
-
-    fn view(self) -> Self::Type {
-        let elem = self.value.lock().view();
-        wasm_bindgen_futures::spawn_local(super::change(elem.clone(), self.rx()));
+    fn from(x: StateMutex<T>) -> Self {
+        let elem: Self = x.value.lock().into();
+        wasm_bindgen_futures::spawn_local(super::change(elem.clone(), x.rx()));
 
         elem
     }

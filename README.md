@@ -9,12 +9,12 @@ A lot of work is left and you are welcome to try it out.*
  - No Virtual DOM.
  - UI can be made simply, by following an MVVM architecture rather an MVC architecture.
  - Use state variables to update the UI where required.
- - Written without any unsafe code and `nightly` rust required.
+ - Written without any unsafe code and `nightly` Rust required.
 
 ## Architecture
 
  - Every UI element has to implement the `Component` trait.
- - A page is a function which returns a `web_sys::Node`.
+ - A page is a function which returns a `Node`.
  - Two type of State variables 
    - `StateAtomic` for types implementing `Copy`.
    - `StateMutex` for types implementing `Clone`.
@@ -60,13 +60,13 @@ Take a look at `wasm-pack` docs for more options.
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> web_sys::Node {
+fn ui() -> Node {
     h1!("Hello World").into()
 }
 
 #[valerie(start)]
 pub fn run() {
-    App::new().push("hello_world", launch_page).render();
+    App::render_single(ui());
 }
 ```
 
@@ -76,7 +76,7 @@ pub fn run() {
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> web_sys::Node {
+fn ui() -> Node {
     let value = StateAtomic::new(0isize);
 
     div!(
@@ -95,9 +95,7 @@ fn launch_page() -> web_sys::Node {
 
 #[valerie(start)]
 pub fn run() {
-    App::new()
-        .push("list_add_remove_items", launch_page)
-        .render();
+    App::render_single(ui());
 }
 ```
 
@@ -108,7 +106,7 @@ use valerie::prelude::components::*;
 use valerie::prelude::*;
 use wasm_timer::Delay;
 
-fn launch_page() -> web_sys::Node {
+fn ui() -> web_sys::Node {
     let timer = StateAtomic::new(0);
 
     execute(time(1, timer.clone()));
@@ -126,7 +124,7 @@ async fn time(n: u64, mut timer: StateAtomic<usize>) {
 
 #[valerie(start)]
 pub fn run() {
-    App::new().push("time_counter", launch_page).render();
+    App::render_single(ui());
 }
 ```
 

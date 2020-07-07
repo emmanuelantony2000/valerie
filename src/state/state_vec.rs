@@ -19,6 +19,11 @@ where
     Remove(usize),
 }
 
+/// A vector of States
+///
+/// Any type implementing `StateTrait` can be used with StateVec.
+///
+/// This uses `RwLock` of parking_lot internally with `Vec` from alloc.
 #[derive(Default)]
 pub struct StateVec<T>
 where
@@ -32,10 +37,59 @@ impl<T> StateVec<T>
 where
     T: Send,
 {
+    /// Declare an empty StateVec.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.push(StateAtomic::new(0));
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn new() -> Self {
         Self {
             value: Arc::new(RwLock::new(Vec::new())),
             tx: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+
+    /// Declare a StateVec with some initial capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn with_capacity(n: usize) -> Self {
+        Self {
+            value: Arc::new(RwLock::new(Vec::with_capacity(n))),
+            tx: Arc::new(RwLock::new(Vec::with_capacity(n))),
         }
     }
 }
@@ -44,6 +98,37 @@ impl<T> StateVec<T>
 where
     T: StateTrait + Send,
 {
+    /// Render the StateVec to the DOM.
+    /// It will update if any element changes or even if the list changes automatically.
+    ///
+    ///  - `enclose` is the `Component` inside which all of the elements will be present.
+    ///  - `object` is the function which will return a `Component` when passed a type following
+    /// the `StateTrait`. The function will define how all the elements will be seen inside
+    /// the `enclose`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    ///
+    /// div!(
+    ///     vec.view(ul!(), |x| li!(x)),
+    ///     br!(),
+    ///     vec.view(ol!(), |x| li!("Element ", x))
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn view<F, U, V>(&self, enclose: U, object: F) -> U
     where
         F: FnOnce(T) -> V,
@@ -91,53 +176,227 @@ where
         enclose
     }
 
+    /// Push an element on to the StateVec.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.push(StateAtomic::new(0));
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn push(&self, value: T) {
         self.value.write().push(value.clone());
         self.update(Change::Push(value));
     }
 
+    /// Insert an element into the StateVec.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.insert(0, StateAtomic::new(0));
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn insert(&self, index: usize, value: T) {
         self.value.write().insert(index, value.clone());
         self.update(Change::Insert(index, value));
     }
 
+    /// Remove an element from the StateVec by index.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    /// vec.remove(3);
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn remove(&self, index: usize) {
         self.value.write().remove(index);
         self.update(Change::Remove(index));
     }
 
+    /// Remove an element from the StateVec using a clone of the element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// let removable = StateAtomic::new(13);
+    /// vec.push(removable.clone());
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    ///
+    /// vec.remove_elem(removable);
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn remove_elem(&self, elem: T) {
-        web_sys::console::log_1(&alloc::format!("Elem {}", elem.value()).into());
-        web_sys::console::log_1(&alloc::format!("Equals").into());
-        self.value
-            .read()
-            .iter()
-            .for_each(|x| web_sys::console::log_1(&alloc::format!("{}", x == &elem).into()));
-
         let index = self.value.read().iter().position(|x| x == &elem).unwrap();
         self.remove(index);
     }
 
+    /// Pop an element from the end of the StateVec.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    /// vec.pop();
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn pop(&self) {
         self.value.write().pop();
         self.update(Change::Remove(self.len()));
     }
 
+    /// Get an element from the StateVec using index.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    ///
+    /// div!(
+    ///     vec.get(3).unwrap(),
+    ///     vec.view(ul!(), |x| li!(x))
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn get(&self, index: usize) -> Option<T> {
+        self.value.read().get(index).map(|x| x.clone())
+    }
+
+    /// Get the len of the StateVec.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    ///
+    /// div!(
+    ///     vec.len(),
+    ///     vec.view(ul!(), |x| li!(x))
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn len(&self) -> usize {
         self.value.read().len()
     }
 
+    /// Check whether StateVec is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::with_capacity(10);
+    /// (0..10).for_each(|x| vec.push(StateAtomic::new(x)));
+    ///
+    /// div!(
+    ///     vec.is_empty(),
+    ///     vec.view(ul!(), |x| li!(x))
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.value.read().is_empty()
     }
 
     fn update(&self, change: Change<T>) {
-        self.value
-            .read()
-            .iter()
-            .for_each(|x| web_sys::console::log_1(&alloc::format!("{}", x.value()).into()));
-        web_sys::console::log_1(&alloc::format!("That's it!").into());
-
         self.tx
             .read()
             .iter()
@@ -154,14 +413,58 @@ impl<T> StateVec<StateAtomic<T>>
 where
     T: Copy + Send + Display,
 {
+    /// Push an element on the StateVec.
+    /// Same as `push(StateAtomic::new(value))`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.push_atomic(0);
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn push_atomic(&self, value: T) {
-        self.value.write().push(StateAtomic::new(value));
-        self.update(Change::Push(StateAtomic::new(value)));
+        let value = StateAtomic::new(value);
+        self.push(value);
     }
 
+    /// Push an element on the StateVec.
+    /// Same as `push(StateAtomic::insert(index, value))`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.insert_atomic(0, 0);
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn insert_atomic(&self, index: usize, value: T) {
-        self.value.write().insert(index, StateAtomic::new(value));
-        self.update(Change::Insert(index, StateAtomic::new(value)));
+        let value = StateAtomic::new(value);
+        self.insert(index, value);
     }
 }
 
@@ -169,16 +472,58 @@ impl<T> StateVec<StateMutex<T>>
 where
     T: Clone + Send + Display,
 {
+    /// Push an element on the StateVec.
+    /// Same as `push(StateMutex::new(value))`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.push_mutex(0);
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn push_mutex(&self, value: T) {
-        self.value.write().push(StateMutex::new(value.clone()));
-        self.update(Change::Push(StateMutex::new(value)));
+        let value = StateMutex::new(value);
+        self.push(value);
     }
 
+    /// Push an element on the StateVec.
+    /// Same as `push(StateMutex::insert(index, value))`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let vec = StateVec::new();
+    /// vec.insert_mutex(0, 0);
+    ///
+    /// vec.view(ul!(), |x| li!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn insert_mutex(&self, index: usize, value: T) {
-        self.value
-            .write()
-            .insert(index, StateMutex::new(value.clone()));
-        self.update(Change::Insert(index, StateMutex::new(value)));
+        let value = StateMutex::new(value);
+        self.insert(index, value);
     }
 }
 
@@ -271,4 +616,4 @@ where
 //     type Output = &T;
 //
 //     fn index(&self, index: Idx)
-// }f
+// }

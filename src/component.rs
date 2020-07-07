@@ -1,23 +1,20 @@
 use alloc::string::ToString;
 use core::fmt::Display;
 
-use crate::function::document;
+use wasm_bindgen::JsCast;
+
+use crate::function::create_text_element;
 
 /// `Component` trait
-pub trait Component {
-    /// Return type of the view function
-    type Type: AsRef<web_sys::Node>;
+pub trait Component: Into<crate::Node> {}
 
-    fn view(self) -> Self::Type;
-}
+impl<T> Component for T where T: Display {}
 
-impl<T> Component for T
+impl<T> From<T> for crate::Node
 where
     T: Display,
 {
-    type Type = web_sys::Text;
-
-    fn view(self) -> Self::Type {
-        document().create_text_node(&self.to_string())
+    fn from(x: T) -> Self {
+        Self(create_text_element(x.to_string()).unchecked_into())
     }
 }

@@ -11,6 +11,10 @@ use crate::component;
 use crate::function;
 use crate::state::StateTrait;
 
+/// An HTML Tag
+///
+/// Macros are defined for easier use of few tags. Can also be used to make other tags also.
+#[derive(Clone)]
 pub struct Tag<T> {
     elem: T,
 }
@@ -18,7 +22,27 @@ pub struct Tag<T> {
 impl<T> Tag<T>
 where
     T: wasm_bindgen::JsCast,
+    T: AsRef<web_sys::Element>,
 {
+    /// Make a new `Tag`.
+    /// You have to specify the Element type i.e. `Element` or `HtmlDivElement` etc.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// Tag::<web_sys::Element>::new("div").push("Hello, World!")
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn new(tag: &'static str) -> Self {
         Self {
             elem: function::create_element(tag).unchecked_into(),
@@ -30,15 +54,55 @@ impl<T> Tag<T>
 where
     T: AsRef<web_sys::Node>,
 {
-    pub fn push<U>(self, component: &U) -> Self
+    /// Push components inside the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// div!().push("Hello, World!")
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn push<U>(self, component: U) -> Self
     where
-        U: AsRef<web_sys::Node>,
+        U: component::Component,
     {
-        self.elem.as_ref().append_child(component.as_ref()).unwrap();
+        self.elem
+            .as_ref()
+            .append_child(component.into().as_ref())
+            .unwrap();
 
         self
     }
 
+    /// Push multiple components.
+    /// Rarely used. Use `push` preferably.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// div!().push_multiple(&[Node::from("Hello, "), Node::from("World!")])
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn push_multiple<U>(self, components: &[U]) -> Self
     where
         U: AsRef<web_sys::Node>,
@@ -50,17 +114,30 @@ where
         self
     }
 
-    pub fn push_loop<F, U>(self, func: F, n: usize) -> Self
+    /// Push components as a loop from 0 to n (exclusive).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// div!().push_loop(5, |x| h3!(x))
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn push_loop<F, U>(self, n: usize, func: F) -> Self
     where
-        F: Fn(usize) -> T,
-        T: component::Component,
+        F: Fn(usize) -> U,
+        U: component::Component,
     {
-        (0..n).for_each(|x| {
-            let x = func(x);
-            self.elem.as_ref().append_child(x.view().as_ref()).unwrap();
-        });
-
-        self
+        (0..n).map(func).fold(self, |tag, x| tag.push(x))
     }
 }
 
@@ -68,6 +145,34 @@ impl<T> Tag<T>
 where
     T: AsRef<web_sys::Node> + Clone + 'static,
 {
+    /// Attach an event to the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let message = StateMutex::new(String::new());
+    /// button!(message.clone())
+    ///     .on_event("mouseover", message.clone(), |x, _| {
+    ///         x.put("Mouse pointer is in me".to_string())
+    ///     })
+    ///     .on_event("mouseout", message.clone(), |x, _| {
+    ///         x.put("Mouse pointer is outside".to_string())
+    ///     })
+    ///     .on_event("mousedown", message.clone(), |x, _| {
+    ///         x.put("Mouse button pressed".to_string())
+    ///     })
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn on_event<F, U>(self, event: impl AsRef<str>, mut var: U, mut func: F) -> Self
     where
         U: 'static,
@@ -92,26 +197,121 @@ impl<T> Tag<T>
 where
     T: AsRef<web_sys::Element>,
 {
+    /// Set the id of the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// div!("Hello, World!")
+    ///     .id("hello-world")
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn id(self, id: impl AsRef<str>) -> Self {
         self.as_ref().set_id(id.as_ref());
 
         self
     }
 
+    /// Get the id of the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let heading = h1!("Hello, World!").id("hello-world-id");
+    /// div!(heading.clone(), br!(), "id ", heading.get_id())
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn get_id(&self) -> String {
         self.as_ref().id()
     }
 
+    /// Set the class of the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// div!("Hello, World!")
+    ///     .class("heading")
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn class(self, class: impl AsRef<str>) -> Self {
         self.as_ref().set_class_name(class.as_ref());
 
         self
     }
 
+    /// Get the class of the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let heading = h1!("Hello, World!").class("heading");
+    /// div!(heading.clone(), br!(), "class ", heading.get_class())
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn get_class(&self) -> String {
         self.as_ref().class_name()
     }
 
+    /// Set the attribute of the `Tag` by key and value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// div!("Hello, World!")
+    ///     .attr("id", "hello-world")
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn attr(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
         self.as_ref()
             .set_attribute(key.as_ref(), value.as_ref())
@@ -120,12 +320,61 @@ where
         self
     }
 
+    /// Get the attribute of the `Tag` by key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let heading = h1!("Hello, World!").attr("id", "hello-world");
+    /// div!(
+    ///     heading.clone(),
+    ///     br!(),
+    ///     "attr ",
+    ///     heading.get_attr("id").unwrap()
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn get_attr(&self, key: impl AsRef<str>) -> Option<String> {
         self.as_ref().get_attribute(key.as_ref())
     }
 }
 
 impl Tag<web_sys::HtmlInputElement> {
+    /// One way bind to the input element.
+    /// Any change in the state variable won't be reflected back to the input element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let state = StateMutex::new(String::new());
+    /// div!(
+    ///     state.clone(),
+    ///     br!(),
+    ///     input!("text").bind(state.clone()),
+    ///     input!("text").bind(state)
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn bind<T>(self, var: T) -> Self
     where
         T: StateTrait + 'static,
@@ -141,6 +390,31 @@ impl Tag<web_sys::HtmlInputElement> {
         })
     }
 
+    /// Two way bind to the input element.
+    /// Any change in the state variable will be reflected back to the input element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let state = StateMutex::new(String::new());
+    /// div!(
+    ///     state.clone(),
+    ///     br!(),
+    ///     input!("text").double_bind(state.clone()),
+    ///     input!("text").double_bind(state)
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn double_bind<T>(self, var: T) -> Self
     where
         T: StateTrait + 'static,
@@ -162,6 +436,30 @@ impl Tag<web_sys::HtmlInputElement> {
         self.bind(var)
     }
 
+    /// A function to bind to the input element.
+    /// This function gets called every time the event `input` fires i.e. when the user enters and input.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let state = StateAtomic::new(0usize);
+    /// div!(
+    ///     state.clone(),
+    ///     br!(),
+    ///     input!("text").bind_func(state, |x| x.len())
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn bind_func<T, F>(self, var: T, func: F) -> Self
     where
         T: StateTrait + 'static,
@@ -175,6 +473,25 @@ impl Tag<web_sys::HtmlInputElement> {
         })
     }
 
+    /// To add placeholder for the input element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// input!("text")
+    ///     .placeholder("Enter something...")
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
     pub fn placeholder(self, text: impl AsRef<str>) -> Self {
         self.elem.set_placeholder(text.as_ref());
 
@@ -198,10 +515,10 @@ impl<T> DerefMut for Tag<T> {
 
 impl<T> AsRef<web_sys::Node> for Tag<T>
 where
-    T: AsRef<web_sys::Node>,
+    T: JsCast,
 {
     fn as_ref(&self) -> &web_sys::Node {
-        self.elem.as_ref()
+        self.elem.unchecked_ref()
     }
 }
 
@@ -214,186 +531,13 @@ where
     }
 }
 
-impl<T> component::Component for Tag<T>
+impl<T> From<Tag<T>> for crate::Node
 where
     T: JsCast,
 {
-    type Type = web_sys::Node;
-
-    fn view(self) -> Self::Type {
-        self.elem.unchecked_into()
+    fn from(tag: Tag<T>) -> Self {
+        Self(tag.elem.unchecked_into())
     }
 }
 
-// pub struct Tag {
-//     function: Function,
-// }
-
-// impl Tag {
-//     pub fn new(tag: &'static str) -> Self {
-//         Self {
-//             function: Function::new(FunctionType::Element(tag)),
-//         }
-//     }
-
-//     pub fn push<T>(self, component: &T) -> Self
-//     where
-//         T: Deref<Target = web_sys::Node>,
-//     {
-//         self.push_child(component);
-
-//         self
-//     }
-
-//     pub fn push_multiple<T>(self, components: &[T]) -> Self
-//     where
-//         T: Deref<Target = web_sys::Node>,
-//     {
-//         components.iter().for_each(|x| {
-//             self.push_child(x);
-//         });
-
-//         self
-//     }
-
-//     pub fn push_loop<F, T>(self, func: F, n: usize) -> Self
-//     where
-//         F: Fn(usize) -> T,
-//         T: Component,
-//     {
-//         (0..n).for_each(|x| {
-//             let x = func(x);
-//             self.push_child(&x.view());
-//         });
-
-//         self
-//     }
-
-//     pub fn id(self, id: &'static str) -> Self {
-//         self.set_id(id);
-
-//         self
-//     }
-
-//     pub fn get_id(&self) -> String {
-//         self.deref().get_id().unwrap()
-//     }
-
-//     pub fn class(self, class: &'static str) -> Self {
-//         self.set_class(class);
-
-//         self
-//     }
-
-//     pub fn get_class(&self) -> String {
-//         self.deref().get_class().unwrap()
-//     }
-
-//     pub fn attr(self, attr: &'static str, value: &'static str) -> Self {
-//         self.set_attribute(attr, value);
-
-//         self
-//     }
-
-//     pub fn get_attr(&self, attr: &'static str) -> Option<String> {
-//         self.get_attribute(attr)
-//     }
-
-//     pub fn on_click<T, F>(self, var: T, func: F) -> Self
-//     where
-//         T: 'static,
-//         F: FnMut(&mut T, &mut Element) + 'static,
-//     {
-//         self.on_event("click", var, func)
-//     }
-
-//     pub fn on_dblclick<T, F>(self, var: T, func: F) -> Self
-//     where
-//         T: 'static,
-//         F: FnMut(&mut T, &mut Element) + 'static,
-//     {
-//         self.on_event("dblclick", var, func)
-//     }
-
-//     pub fn on_event<T, F>(self, event: &'static str, mut var: T, mut func: F) -> Self
-//     where
-//         T: 'static,
-//         F: FnMut(&mut T, &mut Element) + 'static,
-//     {
-//         let mut elem = self.element().unwrap();
-//         self.add_event(Event::new(
-//             event,
-//             Box::new(move || {
-//                 func(&mut var, &mut elem);
-//             }),
-//         ));
-
-//         self
-//     }
-
-//     pub fn bind<T>(self, var: T) -> Self
-//     where
-//         T: StateTrait + 'static,
-//         T::Value: FromStr + Default,
-//     {
-//         self.on_event("input", var, |x, elem| {
-//             x.put(
-//                 elem.unchecked_ref::<web_sys::HtmlDataElement>()
-//                     .value()
-//                     .parse()
-//                     .unwrap_or_default(),
-//             );
-//         })
-//     }
-
-//     pub fn double_bind<T>(self, var: T) -> Self
-//     where
-//         T: StateTrait + 'static,
-//         T::Value: FromStr + Default,
-//         T::Channel: Deref<Target = String>,
-//     {
-//         let ele = self.element().unwrap();
-//         let rx = var.rx();
-
-//         wasm_bindgen_futures::spawn_local(async move {
-//             let mut old = StateId::new();
-//             while let Some((new, value)) = rx.receive(old).await {
-//                 ele.unchecked_ref::<web_sys::HtmlDataElement>().set_value(&value);
-//                 old = new;
-//             }
-//         });
-
-//         self.bind(var)
-//     }
-
-//     pub fn bind_func<T, F>(self, var: T, func: F) -> Self
-//     where
-//         T: StateTrait + 'static,
-//         F: FnOnce(String) -> T::Value,
-//         F: 'static + Copy,
-//     {
-//         self.on_event("input", var, move |x, elem| {
-//             x.put(func(elem.unchecked_ref::<web_sys::HtmlDataElement>().value()));
-//         })
-//     }
-// }
-
-// impl Component for Tag {
-//     fn view(self) -> Function {
-//         self.function
-//     }
-// }
-
-// impl Deref for Tag {
-//     type Target = Function;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.function
-//     }
-// }
-
-// impl Default for Tag {
-//     fn default() -> Self {
-//         Tag::new("div")
-//     }
-// }
+impl<T> component::Component for Tag<T> where T: JsCast {}

@@ -1,7 +1,7 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> web_sys::Node {
+fn launch_page() -> Node {
     let value = StateAtomic::new(0isize);
 
     div!(
@@ -18,7 +18,5 @@ fn launch_page() -> web_sys::Node {
 
 #[valerie(start)]
 pub fn run() {
-    App::new()
-        .push("list_add_remove_items", launch_page)
-        .render();
+    App::render_single(launch_page());
 }

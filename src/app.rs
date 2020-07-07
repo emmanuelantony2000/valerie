@@ -6,13 +6,17 @@ use crate::function;
 
 // pub type Globals = Option<state::StateTrait>;
 
+/// The `App` struct for creating an App
+///
+/// *Routing is not currently implemented.*
 #[derive(Default)]
 pub struct App {
-    routes: Vec<(&'static str, Box<dyn Fn() -> web_sys::Node>)>,
+    routes: Vec<(&'static str, Box<dyn Fn() -> crate::Node>)>,
     start: Option<&'static str>,
 }
 
 impl App {
+    /// Create a new `App` instance.
     pub fn new() -> Self {
         console_error_panic_hook::set_once();
         Self {
@@ -21,10 +25,11 @@ impl App {
         }
     }
 
+    /// Push routes inside the `App` struct.
     pub fn push(
         &mut self,
         route: &'static str,
-        component: impl Fn() -> web_sys::Node + 'static,
+        component: impl Fn() -> crate::Node + 'static,
     ) -> &mut Self {
         if self.routes.iter().any(|x| x.0 == route) {
             panic!("Same routes for two pages");
@@ -35,11 +40,13 @@ impl App {
         self
     }
 
+    /// Specify the starting route.
     pub fn start(&mut self, start: &'static str) -> &mut Self {
         self.start = Some(start);
         self
     }
 
+    /// Render the `App`.
     pub fn render(&mut self) {
         let route = self
             .routes
@@ -57,7 +64,25 @@ impl App {
         }
     }
 
-    pub fn render_single(function: web_sys::Node) {
+    /// Render a single page.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// fn ui() -> Node {
+    ///     h1!("Hello, World!")
+    ///     .into()
+    /// }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// fn run() {
+    ///     App::render_single(ui());
+    /// }
+    /// ```
+    pub fn render_single(function: crate::Node) {
         if let Some(x) = function::body().first_child() {
             function::body().replace_child(&function, &x).unwrap();
         } else {
