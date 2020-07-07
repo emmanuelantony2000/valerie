@@ -15,11 +15,11 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-      - uses: action-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
         with:
           command: build
           args: --target wasm32-unknown-unknown
-      - uses: action-rs/install@v0.1
+      - uses: actions-rs/install@v0.1
         with:
           crate: wasm-pack
           version: latest
@@ -35,10 +35,10 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-      - uses: action-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
         with:
           command: test
-      - uses: action-rs/install@v0.1
+      - uses: actions-rs/install@v0.1
         with:
           crate: wasm-pack
           version: latest
@@ -55,7 +55,7 @@ jobs:
           profile: minimal
           toolchain: nightly
           components: clippy
-      - uses: action-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: -- -D warnings
@@ -70,7 +70,7 @@ jobs:
           profile: minimal
           toolchain: nightly
           components: rustfmt
-      - uses: action-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
