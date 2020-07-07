@@ -6,12 +6,14 @@ use crate::function;
 
 // pub type Globals = Option<state::StateTrait>;
 
+struct Route(&'static str, Box<dyn Fn() -> crate::Node>);
+
 /// The `App` struct for creating an App
 ///
 /// *Routing is not currently implemented.*
 #[derive(Default)]
 pub struct App {
-    routes: Vec<(&'static str, Box<dyn Fn() -> crate::Node>)>,
+    routes: Vec<Route>,
     start: Option<&'static str>,
 }
 
@@ -35,7 +37,7 @@ impl App {
             panic!("Same routes for two pages");
         }
 
-        self.routes.push((route, Box::new(component)));
+        self.routes.push(Route(route, Box::new(component)));
         self.start = Some(route);
         self
     }

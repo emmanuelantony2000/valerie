@@ -337,7 +337,7 @@ where
     /// # }
     /// ```
     pub fn get(&self, index: usize) -> Option<T> {
-        self.value.read().get(index).map(|x| x.clone())
+        self.value.read().get(index).cloned()
     }
 
     /// Get the len of the StateVec.

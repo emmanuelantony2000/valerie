@@ -1,0 +1,76 @@
+on: [push, pull_request]
+
+name: CI
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+      - uses: action-rs/cargo@v1
+        with:
+          command: build
+          args: --target wasm32-unknown-unknown
+      - uses: action-rs/install@v0.1
+          with:
+            crate: wasm-pack
+            version: latest
+            use-tool-cache: true
+      - run: wasm-pack build
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+      - uses: action-rs/cargo@v1
+        with:
+          command: test
+      - uses: action-rs/install@v0.1
+          with:
+            crate: wasm-pack
+            version: latest
+            use-tool-cache: true
+      - run: wasm-pack test --chrome --firefox --headless
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: clippy
+      - uses: action-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rustfmt
+      - uses: action-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
