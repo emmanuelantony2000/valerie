@@ -26,6 +26,17 @@ fn state_mutex_ui() -> impl Component {
     div!(h3!("String: ", string), h3!(length))
 }
 
+fn state_from_ui() -> impl Component {
+    let string = StateMutex::new(String::new());
+    let length = StateAtomic::from(&string, |x| x.len());
+
+    div!(
+        h3!(string.clone()),
+        h3!(length),
+        input!("text").bind(string)
+    )
+}
+
 fn state_vec_ui() -> impl Component {
     let vec = StateVec::with_capacity(10);
     (0..10).for_each(|x| vec.insert(x, StateAtomic::new(x)));
@@ -47,6 +58,11 @@ fn ui() -> Node {
         "StateMutex from",
         br!(),
         state_mutex_ui(),
+        br!(),
+        br!(),
+        "String and len",
+        br!(),
+        state_from_ui(),
         br!(),
         br!(),
         "StateVec",

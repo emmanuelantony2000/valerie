@@ -4,13 +4,15 @@
 //! Rust front-end framework for building web apps.
 //!
 //! *Valerie is still in a very early phase.
-//! A lot of feature are not available at the moment.
+//! A lot of features are not available at the moment.
 //! A lot of work is left and you are welcome to try it out.*
 //!
 //! - No Virtual DOM.
-//! - UI can be made simply, by following an MVVM architecture rather an MVC architecture.
+//! - UI can be made in a simple manner,
+//! by following an MVVM architecture rather an MVC architecture.
 //! - Use state variables to update the UI where required.
-//! - Written without any unsafe code and `nightly` Rust required.
+//! - Written without any unsafe code.
+//! - `nightly` Rust required.
 //!
 //! ## Architecture
 //!
@@ -91,7 +93,7 @@
 //!                 *x -= 1;
 //!             })
 //!     )
-//!         .into()
+//!     .into()
 //! }
 //!
 //! #[valerie(start)]

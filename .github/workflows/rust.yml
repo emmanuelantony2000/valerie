@@ -15,11 +15,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          target: wasm32-unknown-unknown
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --target wasm32-unknown-unknown
       - uses: actions-rs/install@v0.1
         with:
           crate: wasm-pack

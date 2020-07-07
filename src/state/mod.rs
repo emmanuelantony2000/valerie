@@ -63,7 +63,6 @@ where
     T: StateTrait + 'static,
     U: StateTrait + 'static,
     F: FnMut(U::Value) -> T::Value + 'static,
-    T::Value: From<U::Value> + 'static,
 {
     let new_move = new.clone();
     let state_value = state.clone();

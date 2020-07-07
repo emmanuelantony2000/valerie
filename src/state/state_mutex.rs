@@ -85,7 +85,7 @@ impl<T> StateMutex<T> {
 
 impl<T> StateMutex<T>
 where
-    T: fmt::Display + Clone,
+    T: fmt::Display + Clone + 'static,
 {
     /// Derive a `StateAtomic` variable from another variable implementing `StateTrait`.
     ///
@@ -118,8 +118,7 @@ where
     pub fn from<U, F>(state: &U, mut func: F) -> Self
     where
         U: StateTrait + 'static,
-        F: FnMut(U::Value) -> T + 'static,
-        T: From<U::Value> + 'static,
+        F: FnMut(U::Value) -> <Self as StateTrait>::Value + 'static,
     {
         let value = func(state.value());
         let new = Self::new(value);
