@@ -1,7 +1,11 @@
+use wasm_bindgen_test::*;
+
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn launch_page() -> Node {
+wasm_bindgen_test_configure!(run_in_browser);
+
+fn ui() -> Node {
     let text = StateMutex::new(String::new());
     let list = StateVec::new();
 
@@ -10,12 +14,12 @@ fn launch_page() -> Node {
             input!("text")
                 .double_bind(text.clone())
                 .placeholder("Type something here"),
-            button!("Insert").on_event("click", (text, list.clone()), |(text, list), _| {
+            button!("Insert").on_event("click", (text.clone(), list.clone()), |(text, list), _| {
                 list.push_mutex(text.value());
                 text.put(String::new());
             })
         ),
-        list.clone().view(ul!(), move |x| list_item(x, list).into())
+        list.clone().view(ul!(), |x| list_item(x, list).into())
     )
     .into()
 }
@@ -29,7 +33,7 @@ fn list_item(x: StateMutex<String>, list: StateVec<StateMutex<String>>) -> impl 
     )
 }
 
-#[valerie(start)]
+#[wasm_bindgen_test]
 pub fn run() {
-    App::render_single(launch_page());
+    App::render_single(ui());
 }

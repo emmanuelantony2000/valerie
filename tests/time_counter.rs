@@ -1,8 +1,12 @@
+use wasm_bindgen_test::*;
+
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 use wasm_timer::Delay;
 
-fn launch_page() -> Node {
+wasm_bindgen_test_configure!(run_in_browser);
+
+fn ui() -> Node {
     let timer = StateAtomic::new(0);
 
     execute(time(1, timer.clone()));
@@ -15,7 +19,7 @@ async fn time(n: u64, mut timer: StateAtomic<usize>) {
     }
 }
 
-#[valerie(start)]
+#[wasm_bindgen_test]
 pub fn run() {
-    App::render_single(launch_page());
+    App::render_single(ui());
 }
