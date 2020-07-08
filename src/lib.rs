@@ -130,6 +130,11 @@
 //!     App::render_single(ui());
 //! }
 //! ```
+//!
+//! # Features
+//!
+//!  - `debug` For debugging purposes. Use this feature if your code is crashing during
+//! runtime and you want a stack trace.
 
 extern crate alloc;
 

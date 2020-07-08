@@ -20,7 +20,9 @@ pub struct App {
 impl App {
     /// Create a new `App` instance.
     pub fn new() -> Self {
+        #[cfg(feature = "debug")]
         console_error_panic_hook::set_once();
+
         Self {
             routes: Vec::new(),
             start: None,
@@ -85,6 +87,9 @@ impl App {
     /// }
     /// ```
     pub fn render_single(function: crate::Node) {
+        #[cfg(feature = "debug")]
+        console_error_panic_hook::set_once();
+
         if let Some(x) = function::body().first_child() {
             function::body().replace_child(&function, &x).unwrap();
         } else {
