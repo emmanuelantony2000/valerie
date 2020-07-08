@@ -26,7 +26,7 @@
 //!
 //! - Run `cargo new --lib some_name`
 //! - Add `valerie` to the dependencies
-//! - Make a `static` directory and make an `index.html` inside it
+//! - Create a `static` directory and create an `index.html` inside it
 //!
 //! ```html
 //! <!doctype html>
@@ -51,9 +51,12 @@
 //! opt-level = 3
 //! ```
 //!
-//! - Use some server, like [miniserve](https://github.com/svenstaro/miniserve), to host it and try it out.
+//! - Compile it using [`wasm-pack`](https://github.com/rustwasm/wasm-pack) by running
+//! `wasm-pack build --target web --out-name wasm --out-dir ./static`
+//! - Use some server, like [`miniserve`](https://github.com/svenstaro/miniserve),
+//! to host the `./static` folder and try it out.
 //!
-//! Take a look at `wasm-pack` docs for more options.
+//! Take a look at `wasm-pack` [docs](https://rustwasm.github.io/docs/wasm-pack/) for more options.
 //!
 //! # Examples
 //!

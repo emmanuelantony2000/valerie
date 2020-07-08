@@ -1,5 +1,13 @@
 # Valerie
 
+[![CI](https://github.com/emmanuelantony2000/valerie/workflows/CI/badge.svg)](
+https://github.com/emmanuelantony2000/valerie/actions)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)]()
+[![Cargo](https://img.shields.io/crates/v/valerie.svg)](
+https://crates.io/crates/valerie)
+[![Documentation](https://docs.rs/valerie/badge.svg)](
+https://docs.rs/valerie)
+
 Rust front-end framework for building web apps.
 
 *Valerie is still in a very early phase.
@@ -25,7 +33,7 @@ A lot of work is left and you are welcome to try it out.*
 
  - Run `cargo new --lib some_name`
  - Add `valerie` to the dependencies
- - Make a `static` directory and make an `index.html` inside it
+ - Create a `static` directory and create an `index.html` inside it
 
 ```html
 <!doctype html>
@@ -50,9 +58,12 @@ lto = true
 opt-level = 3
 ```
 
- - Use some server, like [miniserve](https://github.com/svenstaro/miniserve), to host it and try it out.
+ - Compile it using [`wasm-pack`](https://github.com/rustwasm/wasm-pack) by running
+ `wasm-pack build --target web --out-name wasm --out-dir ./static`
+ - Use some server, like [`miniserve`](https://github.com/svenstaro/miniserve),
+ to host the `./static` folder and try it out.
  
-Take a look at `wasm-pack` docs for more options.
+Take a look at `wasm-pack` [docs](https://rustwasm.github.io/docs/wasm-pack/) for more options.
 
 ## Examples
 
