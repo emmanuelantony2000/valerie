@@ -143,6 +143,13 @@ pub fn run() {
 
 There are more examples in the examples directory.
 
+## Missing features
+
+ - Library support for CSS.
+ - Using States for CSS.
+ - Routing and multi-page support.
+ - Global Variables for Multiple Pages.
+
 ## Issues and Contributing
 
 Since this is a new project, there are a lot of issues currently and a lot of features yet to be implemented.
