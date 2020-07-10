@@ -1,0 +1,15 @@
+[package]
+name = "todolist"
+version = "0.1.0"
+authors = ["Emmanuel Antony <emmanuelantony2000@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+valerie = { path = "../../../valerie" }
+
+[profile.release]
+lto = true
+opt-level = 3
