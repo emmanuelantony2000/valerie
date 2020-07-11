@@ -21,7 +21,6 @@ debug = ["console_error_panic_hook"]
 wasm-bindgen = "0.2.64"
 wasm-bindgen-futures = "0.4.14"
 console_error_panic_hook = { version = "0.1.6", optional = true }
-wee_alloc = { version = "0.4.5" }
 futures-intrusive = "0.3.1"
 parking_lot = "0.11.0"
 crossbeam = "0.7.3"

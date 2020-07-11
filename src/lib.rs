@@ -175,6 +175,3 @@ pub mod prelude {
         pub use crate::{br, button, div, h1, h2, h3, h4, h5, h6, input, li, ol, p, span, ul};
     }
 }
-
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
