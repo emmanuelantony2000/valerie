@@ -7,6 +7,7 @@ https://github.com/emmanuelantony2000/valerie/actions)
 https://crates.io/crates/valerie)
 [![Documentation](https://docs.rs/valerie/badge.svg)](
 https://docs.rs/valerie)
+[![Discord](https://img.shields.io/discord/731850006713204777)](https://discord.gg/xx2sArF)
 
 Rust front-end framework for building web apps.
 
