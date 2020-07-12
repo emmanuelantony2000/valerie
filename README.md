@@ -153,5 +153,4 @@ There are more examples in the examples directory.
 
 ## Issues and Contributing
 
-Since this is a new project, there are a lot of issues currently and a lot of features yet to be implemented.
-Please do contribute. Contribution guidelines will be up soon.
+Pick out some issues and start contributing. Our contribution guidelines are available [here](https://github.com/emmanuelantony2000/valerie/blob/master/.github/CONTRIBUTING.md). 
