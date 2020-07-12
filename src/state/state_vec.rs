@@ -89,7 +89,7 @@ where
     pub fn with_capacity(n: usize) -> Self {
         Self {
             value: Arc::new(RwLock::new(Vec::with_capacity(n))),
-            tx: Arc::new(RwLock::new(Vec::with_capacity(n))),
+            tx: Arc::new(RwLock::new(Vec::new()))),
         }
     }
 }
