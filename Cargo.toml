@@ -37,6 +37,7 @@ features = [
     "HtmlInputElement",
     "Text",
     "HtmlCollection",
+    "EventTarget",
 ]
 
 [dev-dependencies]

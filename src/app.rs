@@ -95,5 +95,7 @@ impl App {
         } else {
             function::body().append_child(&function).unwrap();
         }
+
+        function.forget();
     }
 }

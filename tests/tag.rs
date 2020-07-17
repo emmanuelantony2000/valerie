@@ -6,7 +6,7 @@ use valerie::prelude::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
 fn new_ui() -> impl Component {
-    Tag::<web_sys::Element>::new("div").push("Hello, World!")
+    Tag::<html::elements::Div>::new().push("Hello, World!")
 }
 
 fn push_ui() -> impl Component {
@@ -14,7 +14,7 @@ fn push_ui() -> impl Component {
 }
 
 fn push_multiple_ui() -> impl Component {
-    div!().push_multiple(&[Node::from("Hello, "), Node::from("World!")])
+    div!().push_multiple(vec![Node::from("Hello, "), Node::from("World!")])
 }
 
 fn push_loop_ui() -> impl Component {
@@ -32,6 +32,21 @@ fn on_event_ui() -> impl Component {
         })
         .on_event("mousedown", message.clone(), |x, _| {
             x.put("Mouse button pressed".to_string())
+        })
+}
+
+fn remove_event_ui() -> impl Component {
+    let message = StateMutex::new(String::from("App is running"));
+    button!(message.clone())
+        .on_event("mouseover", message.clone(), |x, _| {
+            x.put("Mouse pointer is in me".to_string());
+        })
+        .on_event("mouseout", message.clone(), |x, _| {
+            x.put("Mouse pointer is outside".to_string());
+        })
+        .on_event("mousedown", message.clone(), |x, t| {
+            x.put("Mouse button pressed".to_string());
+            t.remove_event("mouseout");
         })
 }
 
@@ -125,6 +140,11 @@ fn ui() -> Node {
         "on_event",
         br!(),
         on_event_ui(),
+        br!(),
+        br!(),
+        "remove_event",
+        br!(),
+        remove_event_ui(),
         br!(),
         br!(),
         "id",

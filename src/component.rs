@@ -15,6 +15,6 @@ where
     T: Display,
 {
     fn from(x: T) -> Self {
-        Self(create_text_element(x.to_string()).unchecked_into())
+        Self::new(create_text_element(x.to_string()).unchecked_into())
     }
 }

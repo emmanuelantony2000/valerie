@@ -8,6 +8,8 @@ use futures_intrusive::channel::shared::{unbuffered_channel, Sender};
 use parking_lot::RwLock;
 
 use super::{StateAtomic, StateMutex, StateTrait};
+use crate::component;
+use crate::html;
 
 #[derive(Clone)]
 enum Change<T>
@@ -17,6 +19,7 @@ where
     Insert(usize, T),
     Push(T),
     Remove(usize),
+    Pop,
 }
 
 /// A vector of States
@@ -129,46 +132,50 @@ where
     /// #     App::render_single(ui());
     /// # }
     /// ```
-    pub fn view<F, U, V>(&self, enclose: U, object: F) -> U
+    pub fn view<F, U, V>(&self, enclose: crate::Tag<U>, object: F) -> crate::Tag<U>
     where
         F: FnOnce(T) -> V,
         F: Clone + 'static,
-        U: AsRef<web_sys::Node>,
-        V: AsRef<web_sys::Node> + 'static,
+        V: component::Component + 'static,
+        U: html::elements::HtmlElement,
     {
-        let mut nodes = Vec::with_capacity(self.len());
+        // let mut nodes = Vec::with_capacity(self.len());
         for i in self.value.read().iter() {
-            nodes.push(object.clone()(i.clone()));
-            enclose
-                .as_ref()
-                .append_child(nodes.last().unwrap().as_ref())
-                .unwrap();
+            // nodes.push(object.clone()(i.clone()));
+            // enclose
+            //     .as_ref()
+            //     .append_child(nodes.last().unwrap().as_ref())
+            //     .unwrap();
+            enclose.node.push_child(object.clone()(i.clone()).into())
         }
 
-        let element = enclose.as_ref().clone();
+        // let element = enclose.as_ref().clone();
+        let node = enclose.node.clone();
         let (tx, rx) = unbuffered_channel();
         self.tx.write().push(tx);
         wasm_bindgen_futures::spawn_local(async move {
             while let Some(change) = rx.receive().await {
                 match change {
-                    Change::Insert(i, x) => {
-                        nodes.insert(i, object.clone()(x));
-                        element
-                            .insert_before(&nodes[i].as_ref(), Some(&nodes[i + 1].as_ref()))
-                            .unwrap();
-                    }
-
-                    Change::Push(x) => {
-                        nodes.push(object.clone()(x));
-                        element
-                            .append_child(&nodes.last().unwrap().as_ref())
-                            .unwrap();
-                    }
-
-                    Change::Remove(i) => {
-                        let node = nodes.remove(i);
-                        element.remove_child(&node.as_ref()).unwrap();
-                    }
+                    Change::Insert(i, x) => node.insert_child(i, object.clone()(x).into()),
+                    // {
+                    // nodes.insert(i, object.clone()(x));
+                    // element
+                    //     .insert_before(&nodes[i].as_ref(), Some(&nodes[i + 1].as_ref()))
+                    //     .unwrap();
+                    // }
+                    Change::Push(x) => node.push_child(object.clone()(x).into()),
+                    //     {
+                    //     nodes.push(object.clone()(x));
+                    //     element
+                    //         .append_child(&nodes.last().unwrap().as_ref())
+                    //         .unwrap();
+                    // }
+                    Change::Remove(i) => node.remove_child(i),
+                    // {
+                    //     let node = nodes.remove(i);
+                    //     element.remove_child(&node.as_ref()).unwrap();
+                    // }
+                    Change::Pop => node.pop_child(),
                 }
             }
         });
@@ -309,7 +316,7 @@ where
     /// ```
     pub fn pop(&self) {
         self.value.write().pop();
-        self.update(Change::Remove(self.len()));
+        self.update(Change::Pop);
     }
 
     /// Get an element from the StateVec using index.

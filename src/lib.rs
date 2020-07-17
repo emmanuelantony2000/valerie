@@ -149,6 +149,8 @@ mod macros;
 mod node;
 mod tag;
 
+/// Contains the HTML Tags.
+pub mod html;
 /// Contains the structs for defining States
 pub mod state;
 
@@ -165,7 +167,9 @@ pub mod prelude {
     pub use wasm_bindgen_futures::spawn_local as execute;
     pub use web_sys;
 
+    pub use crate::html;
     pub use crate::{App, Component, Node, Tag};
+
     pub use state::{StateAtomic, StateMutex, StateTrait, StateVec};
 
     use crate::*;

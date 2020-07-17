@@ -3,7 +3,7 @@
 macro_rules! div {
     ( $( $x:expr ),* ) => {
         {
-            let mut div = $crate::Tag::<web_sys::Element>::new("div");
+            let mut div = $crate::Tag::<$crate::html::elements::Div>::new();
             $(
                 div = div.push($x);
             )*
@@ -17,7 +17,7 @@ macro_rules! div {
 macro_rules! p {
     ( $( $x:expr ),* ) => {
         {
-            let mut p = $crate::Tag::<web_sys::Element>::new("p");
+            let mut p = $crate::Tag::<$crate::html::elements::P>::new();
             $(
                 p = p.push($x);
             )*
@@ -31,7 +31,7 @@ macro_rules! p {
 macro_rules! button {
     ( $( $x:expr ),* ) => {
         {
-            let mut button = $crate::Tag::<web_sys::Element>::new("button");
+            let mut button = $crate::Tag::<$crate::html::elements::Button>::new();
             $(
                 button = button.push($x);
             )*
@@ -45,7 +45,7 @@ macro_rules! button {
 macro_rules! h1 {
     ( $( $x:expr ),* ) => {
         {
-            let mut h1 = $crate::Tag::<web_sys::Element>::new("h1");
+            let mut h1 = $crate::Tag::<$crate::html::elements::H1>::new();
             $(
                 h1 = h1.push($x);
             )*
@@ -59,7 +59,7 @@ macro_rules! h1 {
 macro_rules! h2 {
     ( $( $x:expr ),* ) => {
         {
-            let mut h2 = $crate::Tag::<web_sys::Element>::new("h2");
+            let mut h2 = $crate::Tag::<$crate::html::elements::H2>::new();
             $(
                 h2 = h2.push($x);
             )*
@@ -73,7 +73,7 @@ macro_rules! h2 {
 macro_rules! h3 {
     ( $( $x:expr ),* ) => {
         {
-            let mut h3 = $crate::Tag::<web_sys::Element>::new("h3");
+            let mut h3 = $crate::Tag::<$crate::html::elements::H3>::new();
             $(
                 h3 = h3.push($x);
             )*
@@ -87,7 +87,7 @@ macro_rules! h3 {
 macro_rules! h4 {
     ( $( $x:expr ),* ) => {
         {
-            let mut h4 = $crate::Tag::<web_sys::Element>::new("h4");
+            let mut h4 = $crate::Tag::<$crate::html::elements::H4>::new();
             $(
                 h4 = h4.push($x);
             )*
@@ -101,7 +101,7 @@ macro_rules! h4 {
 macro_rules! h5 {
     ( $( $x:expr ),* ) => {
         {
-            let mut h5 = $crate::Tag::<web_sys::Element>::new("h5");
+            let mut h5 = $crate::Tag::<$crate::html::elements::H5>::new();
             $(
                 h5 = h5.push($x);
             )*
@@ -115,7 +115,7 @@ macro_rules! h5 {
 macro_rules! h6 {
     ( $( $x:expr ),* ) => {
         {
-            let mut h6 = $crate::Tag::<web_sys::Element>::new("h6");
+            let mut h6 = $crate::Tag::<$crate::html::elements::H6>::new();
             $(
                 h6 = h6.push($x);
             )*
@@ -128,7 +128,7 @@ macro_rules! h6 {
 #[macro_export]
 macro_rules! br {
     () => {{
-        let mut br = $crate::Tag::<web_sys::Element>::new("br");
+        let mut br = $crate::Tag::<$crate::html::elements::Br>::new();
 
         br
     }};
@@ -139,7 +139,7 @@ macro_rules! br {
 macro_rules! span {
     ( $( $x:expr ),* ) => {
         {
-            let mut span = $crate::Tag::<web_sys::Element>::new("span");
+            let mut span = $crate::Tag::<$crate::html::elements::Span>::new();
             $(
                 span = span.push($x);
             )*
@@ -153,7 +153,7 @@ macro_rules! span {
 macro_rules! ul {
     ( $( $x:expr ),* ) => {
         {
-            let mut ul = $crate::Tag::<web_sys::Element>::new("ul");
+            let mut ul = $crate::Tag::<$crate::html::elements::Ul>::new();
             $(
                 ul = ul.push($x);
             )*
@@ -167,7 +167,7 @@ macro_rules! ul {
 macro_rules! ol {
     ( $( $x:expr ),* ) => {
         {
-            let mut ol = $crate::Tag::<web_sys::Element>::new("ol");
+            let mut ol = $crate::Tag::<$crate::html::elements::Ol>::new();
             $(
                 ol = ol.push($x);
             )*
@@ -181,7 +181,7 @@ macro_rules! ol {
 macro_rules! li {
     ( $( $x:expr ),* ) => {
         {
-            let mut li = $crate::Tag::<web_sys::Element>::new("li");
+            let mut li = $crate::Tag::<$crate::html::elements::Li>::new();
             $(
                 li = li.push($x);
             )*
@@ -195,13 +195,13 @@ macro_rules! li {
 macro_rules! input {
     ( $type:expr ) => {
         {
-            let mut input = $crate::Tag::<web_sys::HtmlInputElement>::new("input").attr("type", $type);
+            let mut input = $crate::Tag::<$crate::html::elements::Input>::new().attr("type", $type);
             input
         }
     };
     ( $type:expr, $( $x:expr ),* ) => {
         {
-            let mut input = $crate::Tag::<web_sys::HtmlInputElement>::new("input").attr("type", $type);
+            let mut input = $crate::Tag::<$crate::html::elements::Input>::new().attr("type", $type);
             $(
                 input = input.push($x);
             )*
