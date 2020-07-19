@@ -9,6 +9,7 @@
 //! It also spawns an async function with the receiver that waits for a message from the sender.
 //! When the sender sends the message receiver updates the value associated.
 
+use alloc::boxed::Box;
 use alloc::sync::Arc;
 use core::fmt::Display;
 
@@ -16,7 +17,7 @@ use futures_intrusive::channel::shared::{StateReceiver, StateSender};
 use futures_intrusive::channel::StateId;
 
 pub use state_atomic::StateAtomic;
-// pub use state_builder::StateBuilder;
+pub use state_generic::StateGeneric;
 pub use state_mutex::StateMutex;
 pub use state_vec::StateVec;
 
@@ -24,7 +25,7 @@ use crate::channel::Channel;
 use crate::component::Component;
 
 mod state_atomic;
-mod state_builder;
+mod state_generic;
 mod state_mutex;
 mod state_vec;
 
@@ -84,6 +85,14 @@ pub(crate) async fn change(node: impl AsRef<web_sys::Node>, rx: StateReceiver<Ch
     let mut old = StateId::new();
     while let Some((new, value)) = rx.receive(old).await {
         node.as_ref().set_node_value(Some(&value));
+        old = new;
+    }
+}
+
+pub(crate) async fn state_change(mut func: Box<dyn FnMut(&str)>, rx: StateReceiver<Channel>) {
+    let mut old = StateId::new();
+    while let Some((new, value)) = rx.receive(old).await {
+        func(value.as_str());
         old = new;
     }
 }

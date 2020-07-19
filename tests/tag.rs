@@ -56,7 +56,7 @@ fn id_ui() -> impl Component {
 
 fn get_id_ui() -> impl Component {
     let heading = h1!("Hello, World!").id("hello-world-id");
-    div!(heading.clone(), br!(), "id ", heading.get_id())
+    div!(heading.clone(), br!(), "id ", heading.get_id().unwrap())
 }
 
 fn class_ui() -> impl Component {
@@ -65,7 +65,12 @@ fn class_ui() -> impl Component {
 
 fn get_class_ui() -> impl Component {
     let heading = h1!("Hello, World!").class("heading");
-    div!(heading.clone(), br!(), "class ", heading.get_class())
+    div!(
+        heading.clone(),
+        br!(),
+        "class ",
+        heading.get_class().join(" ")
+    )
 }
 
 fn attr_ui() -> impl Component {
@@ -79,6 +84,17 @@ fn get_attr_ui() -> impl Component {
         br!(),
         "attr ",
         heading.get_attr("id").unwrap()
+    )
+}
+
+fn rem_attr_ui() -> impl Component {
+    let heading = input!("text").placeholder("Type Something");
+    div!(
+        heading.clone(),
+        br!(),
+        button!("Remove placeholder").on_event("click", heading, |x, _| {
+            x.rem_attr("placeholder");
+        })
     )
 }
 
@@ -175,6 +191,11 @@ fn ui() -> Node {
         "get_attr",
         br!(),
         get_attr_ui(),
+        br!(),
+        br!(),
+        "rem_attr",
+        br!(),
+        rem_attr_ui(),
         br!(),
         br!(),
         "bind",

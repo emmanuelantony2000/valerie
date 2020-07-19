@@ -6,7 +6,7 @@ pub trait HtmlElement {
 
 // Main root
 
-/// HTML <html> element
+/// HTML `<html>` element
 pub struct Html;
 
 impl HtmlElement for Html {
@@ -17,7 +17,7 @@ impl HtmlElement for Html {
 
 // Document metadata
 
-/// HTML <base> element
+/// HTML `<base>` element
 pub struct Base;
 
 impl HtmlElement for Base {
@@ -26,7 +26,7 @@ impl HtmlElement for Base {
     }
 }
 
-/// HTML <head> element
+/// HTML `<head>` element
 pub struct Head;
 
 impl HtmlElement for Head {
@@ -35,7 +35,7 @@ impl HtmlElement for Head {
     }
 }
 
-/// HTML <link> element
+/// HTML `<link>` element
 pub struct Link;
 
 impl HtmlElement for Link {
@@ -44,7 +44,7 @@ impl HtmlElement for Link {
     }
 }
 
-/// HTML <meta> element
+/// HTML `<meta>` element
 pub struct Meta;
 
 impl HtmlElement for Meta {
@@ -53,7 +53,7 @@ impl HtmlElement for Meta {
     }
 }
 
-/// HTML <style> element
+/// HTML `<style>` element
 pub struct Style;
 
 impl HtmlElement for Style {
@@ -62,7 +62,7 @@ impl HtmlElement for Style {
     }
 }
 
-/// HTML <title> element
+/// HTML `<title>` element
 pub struct Title;
 
 impl HtmlElement for Title {
@@ -73,7 +73,7 @@ impl HtmlElement for Title {
 
 // Sectioning root
 
-/// HTML <body> element
+/// HTML `<body>` element
 pub struct Body;
 
 impl HtmlElement for Body {
@@ -84,7 +84,7 @@ impl HtmlElement for Body {
 
 // Content sectioning
 
-/// HTML <address> element
+/// HTML `<address>` element
 pub struct Address;
 
 impl HtmlElement for Address {
@@ -93,7 +93,7 @@ impl HtmlElement for Address {
     }
 }
 
-/// HTML <article> element
+/// HTML `<article>` element
 pub struct Article;
 
 impl HtmlElement for Article {
@@ -102,7 +102,7 @@ impl HtmlElement for Article {
     }
 }
 
-/// HTML <aside> element
+/// HTML `<aside>` element
 pub struct Aside;
 
 impl HtmlElement for Aside {
@@ -111,7 +111,7 @@ impl HtmlElement for Aside {
     }
 }
 
-/// HTML <footer> element
+/// HTML `<footer>` element
 pub struct Footer;
 
 impl HtmlElement for Footer {
@@ -120,7 +120,7 @@ impl HtmlElement for Footer {
     }
 }
 
-/// HTML <header> element
+/// HTML `<header>` element
 pub struct Header;
 
 impl HtmlElement for Header {
@@ -129,7 +129,7 @@ impl HtmlElement for Header {
     }
 }
 
-/// HTML <h1> element
+/// HTML `<h1>` element
 pub struct H1;
 
 impl HtmlElement for H1 {
@@ -138,7 +138,7 @@ impl HtmlElement for H1 {
     }
 }
 
-/// HTML <h2> element
+/// HTML `<h2>` element
 pub struct H2;
 
 impl HtmlElement for H2 {
@@ -147,7 +147,7 @@ impl HtmlElement for H2 {
     }
 }
 
-/// HTML <h3> element
+/// HTML `<h3>` element
 pub struct H3;
 
 impl HtmlElement for H3 {
@@ -156,7 +156,7 @@ impl HtmlElement for H3 {
     }
 }
 
-/// HTML <h4> element
+/// HTML `<h4>` element
 pub struct H4;
 
 impl HtmlElement for H4 {
@@ -165,7 +165,7 @@ impl HtmlElement for H4 {
     }
 }
 
-/// HTML <h5> element
+/// HTML `<h5>` element
 pub struct H5;
 
 impl HtmlElement for H5 {
@@ -174,7 +174,7 @@ impl HtmlElement for H5 {
     }
 }
 
-/// HTML <h6> element
+/// HTML `<h6>` element
 pub struct H6;
 
 impl HtmlElement for H6 {
@@ -183,7 +183,7 @@ impl HtmlElement for H6 {
     }
 }
 
-/// HTML <hgroup> element
+/// HTML `<hgroup>` element
 pub struct Hgroup;
 
 impl HtmlElement for Hgroup {
@@ -192,7 +192,7 @@ impl HtmlElement for Hgroup {
     }
 }
 
-/// HTML <main> element
+/// HTML `<main>` element
 pub struct Main;
 
 impl HtmlElement for Main {
@@ -201,7 +201,7 @@ impl HtmlElement for Main {
     }
 }
 
-/// HTML <nav> element
+/// HTML `<nav>` element
 pub struct Nav;
 
 impl HtmlElement for Nav {
@@ -210,7 +210,7 @@ impl HtmlElement for Nav {
     }
 }
 
-/// HTML <section> element
+/// HTML `<section>` element
 pub struct Section;
 
 impl HtmlElement for Section {
@@ -221,7 +221,7 @@ impl HtmlElement for Section {
 
 // Text content
 
-/// HTML <blockquote> element
+/// HTML `<blockquote>` element
 pub struct Blockquote;
 
 impl HtmlElement for Blockquote {
@@ -230,7 +230,7 @@ impl HtmlElement for Blockquote {
     }
 }
 
-/// HTML <dd> element
+/// HTML `<dd>` element
 pub struct Dd;
 
 impl HtmlElement for Dd {
@@ -239,7 +239,7 @@ impl HtmlElement for Dd {
     }
 }
 
-/// HTML <div> element
+/// HTML `<div>` element
 pub struct Div;
 
 impl HtmlElement for Div {
@@ -248,7 +248,7 @@ impl HtmlElement for Div {
     }
 }
 
-/// HTML <dl> element
+/// HTML `<dl>` element
 pub struct Dl;
 
 impl HtmlElement for Dl {
@@ -257,7 +257,7 @@ impl HtmlElement for Dl {
     }
 }
 
-/// HTML <dt> element
+/// HTML `<dt>` element
 pub struct Dt;
 
 impl HtmlElement for Dt {
@@ -266,7 +266,7 @@ impl HtmlElement for Dt {
     }
 }
 
-/// HTML <figcaption> element
+/// HTML `<figcaption>` element
 pub struct Figcaption;
 
 impl HtmlElement for Figcaption {
@@ -275,7 +275,7 @@ impl HtmlElement for Figcaption {
     }
 }
 
-/// HTML <figure> element
+/// HTML `<figure>` element
 pub struct Figure;
 
 impl HtmlElement for Figure {
@@ -284,7 +284,7 @@ impl HtmlElement for Figure {
     }
 }
 
-/// HTML <hr> element
+/// HTML `<hr>` element
 pub struct Hr;
 
 impl HtmlElement for Hr {
@@ -293,7 +293,7 @@ impl HtmlElement for Hr {
     }
 }
 
-/// HTML <li> element
+/// HTML `<li>` element
 pub struct Li;
 
 impl HtmlElement for Li {
@@ -302,7 +302,7 @@ impl HtmlElement for Li {
     }
 }
 
-/// HTML <ol> element
+/// HTML `<ol>` element
 pub struct Ol;
 
 impl HtmlElement for Ol {
@@ -311,7 +311,7 @@ impl HtmlElement for Ol {
     }
 }
 
-/// HTML <p> element
+/// HTML `<p>` element
 pub struct P;
 
 impl HtmlElement for P {
@@ -320,7 +320,7 @@ impl HtmlElement for P {
     }
 }
 
-/// HTML <pre> element
+/// HTML `<pre>` element
 pub struct Pre;
 
 impl HtmlElement for Pre {
@@ -329,7 +329,7 @@ impl HtmlElement for Pre {
     }
 }
 
-/// HTML <ul> element
+/// HTML `<ul>` element
 pub struct Ul;
 
 impl HtmlElement for Ul {
@@ -340,7 +340,7 @@ impl HtmlElement for Ul {
 
 // Inline text semantics
 
-/// HTML <a> element
+/// HTML `<a>` element
 pub struct A;
 
 impl HtmlElement for A {
@@ -349,7 +349,7 @@ impl HtmlElement for A {
     }
 }
 
-/// HTML <abbr> element
+/// HTML `<abbr>` element
 pub struct Abbr;
 
 impl HtmlElement for Abbr {
@@ -358,7 +358,7 @@ impl HtmlElement for Abbr {
     }
 }
 
-/// HTML <b> element
+/// HTML `<b>` element
 pub struct B;
 
 impl HtmlElement for B {
@@ -367,7 +367,7 @@ impl HtmlElement for B {
     }
 }
 
-/// HTML <bdi> element
+/// HTML `<bdi>` element
 pub struct Bdi;
 
 impl HtmlElement for Bdi {
@@ -376,7 +376,7 @@ impl HtmlElement for Bdi {
     }
 }
 
-/// HTML <bdo> element
+/// HTML `<bdo>` element
 pub struct Bdo;
 
 impl HtmlElement for Bdo {
@@ -385,7 +385,7 @@ impl HtmlElement for Bdo {
     }
 }
 
-/// HTML <br> element
+/// HTML `<br>` element
 pub struct Br;
 
 impl HtmlElement for Br {
@@ -394,7 +394,7 @@ impl HtmlElement for Br {
     }
 }
 
-/// HTML <cite> element
+/// HTML `<cite>` element
 pub struct Cite;
 
 impl HtmlElement for Cite {
@@ -403,7 +403,7 @@ impl HtmlElement for Cite {
     }
 }
 
-/// HTML <code> element
+/// HTML `<code>` element
 pub struct Code;
 
 impl HtmlElement for Code {
@@ -412,7 +412,7 @@ impl HtmlElement for Code {
     }
 }
 
-/// HTML <data> element
+/// HTML `<data>` element
 pub struct Data;
 
 impl HtmlElement for Data {
@@ -421,7 +421,7 @@ impl HtmlElement for Data {
     }
 }
 
-/// HTML <dfn> element
+/// HTML `<dfn>` element
 pub struct Dfn;
 
 impl HtmlElement for Dfn {
@@ -430,7 +430,7 @@ impl HtmlElement for Dfn {
     }
 }
 
-/// HTML <em> element
+/// HTML `<em>` element
 pub struct Em;
 
 impl HtmlElement for Em {
@@ -439,7 +439,7 @@ impl HtmlElement for Em {
     }
 }
 
-/// HTML <i> element
+/// HTML `<i>` element
 pub struct I;
 
 impl HtmlElement for I {
@@ -448,7 +448,7 @@ impl HtmlElement for I {
     }
 }
 
-/// HTML <kbd> element
+/// HTML `<kbd>` element
 pub struct Kbd;
 
 impl HtmlElement for Kbd {
@@ -457,7 +457,7 @@ impl HtmlElement for Kbd {
     }
 }
 
-/// HTML <mark> element
+/// HTML `<mark>` element
 pub struct Mark;
 
 impl HtmlElement for Mark {
@@ -466,7 +466,7 @@ impl HtmlElement for Mark {
     }
 }
 
-/// HTML <q> element
+/// HTML `<q>` element
 pub struct Q;
 
 impl HtmlElement for Q {
@@ -475,7 +475,7 @@ impl HtmlElement for Q {
     }
 }
 
-/// HTML <rb> element
+/// HTML `<rb>` element
 pub struct Rb;
 
 impl HtmlElement for Rb {
@@ -484,7 +484,7 @@ impl HtmlElement for Rb {
     }
 }
 
-/// HTML <rp> element
+/// HTML `<rp>` element
 pub struct Rp;
 
 impl HtmlElement for Rp {
@@ -493,7 +493,7 @@ impl HtmlElement for Rp {
     }
 }
 
-/// HTML <rt> element
+/// HTML `<rt>` element
 pub struct Rt;
 
 impl HtmlElement for Rt {
@@ -502,7 +502,7 @@ impl HtmlElement for Rt {
     }
 }
 
-/// HTML <rtc> element
+/// HTML `<rtc>` element
 pub struct Rtc;
 
 impl HtmlElement for Rtc {
@@ -511,7 +511,7 @@ impl HtmlElement for Rtc {
     }
 }
 
-/// HTML <ruby> element
+/// HTML `<ruby>` element
 pub struct Ruby;
 
 impl HtmlElement for Ruby {
@@ -520,7 +520,7 @@ impl HtmlElement for Ruby {
     }
 }
 
-/// HTML <s> element
+/// HTML `<s>` element
 pub struct S;
 
 impl HtmlElement for S {
@@ -529,7 +529,7 @@ impl HtmlElement for S {
     }
 }
 
-/// HTML <samp> element
+/// HTML `<samp>` element
 pub struct Samp;
 
 impl HtmlElement for Samp {
@@ -538,7 +538,7 @@ impl HtmlElement for Samp {
     }
 }
 
-/// HTML <small> element
+/// HTML `<small>` element
 pub struct Small;
 
 impl HtmlElement for Small {
@@ -547,7 +547,7 @@ impl HtmlElement for Small {
     }
 }
 
-/// HTML <span> element
+/// HTML `<span>` element
 pub struct Span;
 
 impl HtmlElement for Span {
@@ -556,7 +556,7 @@ impl HtmlElement for Span {
     }
 }
 
-/// HTML <strong> element
+/// HTML `<strong>` element
 pub struct Strong;
 
 impl HtmlElement for Strong {
@@ -565,7 +565,7 @@ impl HtmlElement for Strong {
     }
 }
 
-/// HTML <sub> element
+/// HTML `<sub>` element
 pub struct Sub;
 
 impl HtmlElement for Sub {
@@ -574,7 +574,7 @@ impl HtmlElement for Sub {
     }
 }
 
-/// HTML <sup> element
+/// HTML `<sup>` element
 pub struct Sup;
 
 impl HtmlElement for Sup {
@@ -583,7 +583,7 @@ impl HtmlElement for Sup {
     }
 }
 
-/// HTML <time> element
+/// HTML `<time>` element
 pub struct Time;
 
 impl HtmlElement for Time {
@@ -592,7 +592,7 @@ impl HtmlElement for Time {
     }
 }
 
-/// HTML <u> element
+/// HTML `<u>` element
 pub struct U;
 
 impl HtmlElement for U {
@@ -601,7 +601,7 @@ impl HtmlElement for U {
     }
 }
 
-/// HTML <var> element
+/// HTML `<var>` element
 pub struct Var;
 
 impl HtmlElement for Var {
@@ -610,7 +610,7 @@ impl HtmlElement for Var {
     }
 }
 
-/// HTML <wbr> element
+/// HTML `<wbr>` element
 pub struct Wbr;
 
 impl HtmlElement for Wbr {
@@ -621,7 +621,7 @@ impl HtmlElement for Wbr {
 
 // Image and multimedia
 
-/// HTML <area> element
+/// HTML `<area>` element
 pub struct Area;
 
 impl HtmlElement for Area {
@@ -630,7 +630,7 @@ impl HtmlElement for Area {
     }
 }
 
-/// HTML <audio> element
+/// HTML `<audio>` element
 pub struct Audio;
 
 impl HtmlElement for Audio {
@@ -639,7 +639,7 @@ impl HtmlElement for Audio {
     }
 }
 
-/// HTML <img> element
+/// HTML `<img>` element
 pub struct Img;
 
 impl HtmlElement for Img {
@@ -648,7 +648,7 @@ impl HtmlElement for Img {
     }
 }
 
-/// HTML <map> element
+/// HTML `<map>` element
 pub struct Map;
 
 impl HtmlElement for Map {
@@ -657,7 +657,7 @@ impl HtmlElement for Map {
     }
 }
 
-/// HTML <track> element
+/// HTML `<track>` element
 pub struct Track;
 
 impl HtmlElement for Track {
@@ -666,7 +666,7 @@ impl HtmlElement for Track {
     }
 }
 
-/// HTML <video> element
+/// HTML `<video>` element
 pub struct Video;
 
 impl HtmlElement for Video {
@@ -677,7 +677,7 @@ impl HtmlElement for Video {
 
 // Embedded content
 
-/// HTML <embed> element
+/// HTML `<embed>` element
 pub struct Embed;
 
 impl HtmlElement for Embed {
@@ -686,7 +686,7 @@ impl HtmlElement for Embed {
     }
 }
 
-/// HTML <iframe> element
+/// HTML `<iframe>` element
 pub struct Iframe;
 
 impl HtmlElement for Iframe {
@@ -695,7 +695,7 @@ impl HtmlElement for Iframe {
     }
 }
 
-/// HTML <object> element
+/// HTML `<object>` element
 pub struct Object;
 
 impl HtmlElement for Object {
@@ -704,7 +704,7 @@ impl HtmlElement for Object {
     }
 }
 
-/// HTML <param> element
+/// HTML `<param>` element
 pub struct Param;
 
 impl HtmlElement for Param {
@@ -713,7 +713,7 @@ impl HtmlElement for Param {
     }
 }
 
-/// HTML <picture> element
+/// HTML `<picture>` element
 pub struct Picture;
 
 impl HtmlElement for Picture {
@@ -722,7 +722,7 @@ impl HtmlElement for Picture {
     }
 }
 
-/// HTML <source> element
+/// HTML `<source>` element
 pub struct Source;
 
 impl HtmlElement for Source {
@@ -733,7 +733,7 @@ impl HtmlElement for Source {
 
 // Scripting
 
-/// HTML <canvas> element
+/// HTML `<canvas>` element
 pub struct Canvas;
 
 impl HtmlElement for Canvas {
@@ -742,7 +742,7 @@ impl HtmlElement for Canvas {
     }
 }
 
-/// HTML <noscript> element
+/// HTML `<noscript>` element
 pub struct Noscript;
 
 impl HtmlElement for Noscript {
@@ -751,7 +751,7 @@ impl HtmlElement for Noscript {
     }
 }
 
-/// HTML <script> element
+/// HTML `<script>` element
 pub struct Script;
 
 impl HtmlElement for Script {
@@ -762,7 +762,7 @@ impl HtmlElement for Script {
 
 // Demarcating edits
 
-/// HTML <del> element
+/// HTML `<del>` element
 pub struct Del;
 
 impl HtmlElement for Del {
@@ -771,7 +771,7 @@ impl HtmlElement for Del {
     }
 }
 
-/// HTML <ins> element
+/// HTML `<ins>` element
 pub struct Ins;
 
 impl HtmlElement for Ins {
@@ -782,7 +782,7 @@ impl HtmlElement for Ins {
 
 // Table content
 
-/// HTML <caption> element
+/// HTML `<caption>` element
 pub struct Caption;
 
 impl HtmlElement for Caption {
@@ -791,7 +791,7 @@ impl HtmlElement for Caption {
     }
 }
 
-/// HTML <col> element
+/// HTML `<col>` element
 pub struct Col;
 
 impl HtmlElement for Col {
@@ -800,7 +800,7 @@ impl HtmlElement for Col {
     }
 }
 
-/// HTML <colgroup> element
+/// HTML `<colgroup>` element
 pub struct Colgroup;
 
 impl HtmlElement for Colgroup {
@@ -809,7 +809,7 @@ impl HtmlElement for Colgroup {
     }
 }
 
-/// HTML <table> element
+/// HTML `<table>` element
 pub struct Table;
 
 impl HtmlElement for Table {
@@ -818,7 +818,7 @@ impl HtmlElement for Table {
     }
 }
 
-/// HTML <tbody> element
+/// HTML `<tbody>` element
 pub struct Tbody;
 
 impl HtmlElement for Tbody {
@@ -827,7 +827,7 @@ impl HtmlElement for Tbody {
     }
 }
 
-/// HTML <td> element
+/// HTML `<td>` element
 pub struct Td;
 
 impl HtmlElement for Td {
@@ -836,7 +836,7 @@ impl HtmlElement for Td {
     }
 }
 
-/// HTML <tfoot> element
+/// HTML `<tfoot>` element
 pub struct Tfoot;
 
 impl HtmlElement for Tfoot {
@@ -845,7 +845,7 @@ impl HtmlElement for Tfoot {
     }
 }
 
-/// HTML <th> element
+/// HTML `<th>` element
 pub struct Th;
 
 impl HtmlElement for Th {
@@ -854,7 +854,7 @@ impl HtmlElement for Th {
     }
 }
 
-/// HTML <thead> element
+/// HTML `<thead>` element
 pub struct Thead;
 
 impl HtmlElement for Thead {
@@ -863,7 +863,7 @@ impl HtmlElement for Thead {
     }
 }
 
-/// HTML <tr> element
+/// HTML `<tr>` element
 pub struct Tr;
 
 impl HtmlElement for Tr {
@@ -874,7 +874,7 @@ impl HtmlElement for Tr {
 
 // Forms
 
-/// HTML <button> element
+/// HTML `<button>` element
 pub struct Button;
 
 impl HtmlElement for Button {
@@ -883,7 +883,7 @@ impl HtmlElement for Button {
     }
 }
 
-/// HTML <datalist> element
+/// HTML `<datalist>` element
 pub struct Datalist;
 
 impl HtmlElement for Datalist {
@@ -892,7 +892,7 @@ impl HtmlElement for Datalist {
     }
 }
 
-/// HTML <fieldset> element
+/// HTML `<fieldset>` element
 pub struct Fieldset;
 
 impl HtmlElement for Fieldset {
@@ -901,7 +901,7 @@ impl HtmlElement for Fieldset {
     }
 }
 
-/// HTML <form> element
+/// HTML `<form>` element
 pub struct Form;
 
 impl HtmlElement for Form {
@@ -910,7 +910,7 @@ impl HtmlElement for Form {
     }
 }
 
-/// HTML <input> element
+/// HTML `<input>` element
 pub struct Input;
 
 impl HtmlElement for Input {
@@ -919,7 +919,7 @@ impl HtmlElement for Input {
     }
 }
 
-/// HTML <label> element
+/// HTML `<label>` element
 pub struct Label;
 
 impl HtmlElement for Label {
@@ -928,7 +928,7 @@ impl HtmlElement for Label {
     }
 }
 
-/// HTML <legend> element
+/// HTML `<legend>` element
 pub struct Legend;
 
 impl HtmlElement for Legend {
@@ -937,7 +937,7 @@ impl HtmlElement for Legend {
     }
 }
 
-/// HTML <meter> element
+/// HTML `<meter>` element
 pub struct Meter;
 
 impl HtmlElement for Meter {
@@ -946,7 +946,7 @@ impl HtmlElement for Meter {
     }
 }
 
-/// HTML <optgroup> element
+/// HTML `<optgroup>` element
 pub struct Optgroup;
 
 impl HtmlElement for Optgroup {
@@ -955,7 +955,7 @@ impl HtmlElement for Optgroup {
     }
 }
 
-/// HTML <option> element
+/// HTML `<option>` element
 pub struct Option;
 
 impl HtmlElement for Option {
@@ -964,7 +964,7 @@ impl HtmlElement for Option {
     }
 }
 
-/// HTML <output> element
+/// HTML `<output>` element
 pub struct Output;
 
 impl HtmlElement for Output {
@@ -973,7 +973,7 @@ impl HtmlElement for Output {
     }
 }
 
-/// HTML <progress> element
+/// HTML `<progress>` element
 pub struct Progress;
 
 impl HtmlElement for Progress {
@@ -982,7 +982,7 @@ impl HtmlElement for Progress {
     }
 }
 
-/// HTML <select> element
+/// HTML `<select>` element
 pub struct Select;
 
 impl HtmlElement for Select {
@@ -991,7 +991,7 @@ impl HtmlElement for Select {
     }
 }
 
-/// HTML <textarea> element
+/// HTML `<textarea>` element
 pub struct Textarea;
 
 impl HtmlElement for Textarea {
@@ -1002,7 +1002,7 @@ impl HtmlElement for Textarea {
 
 // Interactive elements
 
-/// HTML <details> element
+/// HTML `<details>` element
 pub struct Details;
 
 impl HtmlElement for Details {
@@ -1011,7 +1011,7 @@ impl HtmlElement for Details {
     }
 }
 
-/// HTML <dialog> element
+/// HTML `<dialog>` element
 pub struct Dialog;
 
 impl HtmlElement for Dialog {
@@ -1020,7 +1020,7 @@ impl HtmlElement for Dialog {
     }
 }
 
-/// HTML <menu> element
+/// HTML `<menu>` element
 pub struct Menu;
 
 impl HtmlElement for Menu {
@@ -1029,7 +1029,7 @@ impl HtmlElement for Menu {
     }
 }
 
-/// HTML <summary> element
+/// HTML `<summary>` element
 pub struct Summary;
 
 impl HtmlElement for Summary {
@@ -1040,7 +1040,7 @@ impl HtmlElement for Summary {
 
 // Web Components
 
-/// HTML <slot> element
+/// HTML `<slot>` element
 pub struct Slot;
 
 impl HtmlElement for Slot {
@@ -1049,7 +1049,7 @@ impl HtmlElement for Slot {
     }
 }
 
-/// HTML <template> element
+/// HTML `<template>` element
 pub struct Template;
 
 impl HtmlElement for Template {

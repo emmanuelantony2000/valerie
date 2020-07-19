@@ -148,8 +148,9 @@ mod function;
 mod macros;
 mod node;
 mod tag;
+mod value;
 
-/// Contains the HTML Tags.
+/// Contains the HTML Tags
 pub mod html;
 /// Contains the structs for defining States
 pub mod state;
@@ -159,6 +160,7 @@ pub use channel::Channel;
 pub use component::Component;
 pub use node::Node;
 pub use tag::Tag;
+pub use value::Value;
 
 /// The `prelude` module
 pub mod prelude {

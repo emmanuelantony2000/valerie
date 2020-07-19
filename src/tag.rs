@@ -1,5 +1,5 @@
 use alloc::boxed::Box;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use core::ops::Deref;
@@ -13,6 +13,7 @@ use crate::component;
 use crate::function;
 use crate::html;
 use crate::state::StateTrait;
+use crate::value::Value;
 
 /// An HTML Tag
 ///
@@ -236,11 +237,7 @@ impl<T> Tag<T> {
     /// # }
     /// ```
     pub fn id(self, id: impl AsRef<str>) -> Self {
-        self.node
-            .node
-            .unchecked_ref::<web_sys::Element>()
-            .set_id(id.as_ref());
-
+        self.node.set_id(id);
         self
     }
 
@@ -254,7 +251,7 @@ impl<T> Tag<T> {
     /// # use wasm_bindgen_test::*;
     /// # fn ui() -> Node {
     /// let heading = h1!("Hello, World!").id("hello-world-id");
-    /// div!(heading.clone(), br!(), "id ", heading.get_id())
+    /// div!(heading.clone(), br!(), "id ", heading.get_id().unwrap())
     /// # .into()
     /// # }
     /// # wasm_bindgen_test_configure!(run_in_browser);
@@ -263,8 +260,8 @@ impl<T> Tag<T> {
     /// #     App::render_single(ui());
     /// # }
     /// ```
-    pub fn get_id(&self) -> String {
-        self.node.node.unchecked_ref::<web_sys::Element>().id()
+    pub fn get_id(&self) -> Option<String> {
+        self.node.get_id()
     }
 
     /// Set the class of the `Tag`.
@@ -287,15 +284,11 @@ impl<T> Tag<T> {
     /// # }
     /// ```
     pub fn class(self, class: impl AsRef<str>) -> Self {
-        self.node
-            .node
-            .unchecked_ref::<web_sys::Element>()
-            .set_class_name(class.as_ref());
-
+        self.node.insert_class(class);
         self
     }
 
-    /// Get the class of the `Tag`.
+    /// Get the classes of the `Tag`.
     ///
     /// # Examples
     ///
@@ -305,7 +298,7 @@ impl<T> Tag<T> {
     /// # use wasm_bindgen_test::*;
     /// # fn ui() -> Node {
     /// let heading = h1!("Hello, World!").class("heading");
-    /// div!(heading.clone(), br!(), "class ", heading.get_class())
+    /// div!(heading.clone(), br!(), "class ", heading.get_class().join(" "))
     /// # .into()
     /// # }
     /// # wasm_bindgen_test_configure!(run_in_browser);
@@ -314,13 +307,73 @@ impl<T> Tag<T> {
     /// #     App::render_single(ui());
     /// # }
     /// ```
-    pub fn get_class(&self) -> String {
-        self.node
-            .node
-            .unchecked_ref::<web_sys::Element>()
-            .class_name()
+    pub fn get_class(&self) -> Vec<String> {
+        self.node.get_class()
     }
 
+    /// Remove a class of the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let heading = input!("text").class("text-type");
+    /// div!(
+    ///     heading.clone(),
+    ///     br!(),
+    ///     button!("Remove class").on_event("click", heading, |x, _| {
+    ///         x.rem_class("text-type");
+    ///     })
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn rem_class(&self, class: impl AsRef<str>) {
+        self.node.remove_class(class);
+    }
+
+    /// Toggle a class of the `Tag`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let heading = input!("text").class("text-type");
+    /// div!(
+    ///     heading.clone(),
+    ///     br!(),
+    ///     button!("Toggle class").on_event("click", heading, |x, _| {
+    ///         x.toggle_class("text-type");
+    ///     })
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn toggle_class(&self, class: impl AsRef<str>) {
+        self.node.toggle_class(class);
+    }
+}
+
+impl<T> Tag<T>
+where
+    T: 'static,
+{
     /// Set the attribute of the `Tag` by key and value.
     ///
     /// # Examples
@@ -340,16 +393,15 @@ impl<T> Tag<T> {
     /// #     App::render_single(ui());
     /// # }
     /// ```
-    pub fn attr(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
-        self.node
-            .node
-            .unchecked_ref::<web_sys::Element>()
-            .set_attribute(key.as_ref(), value.as_ref())
-            .unwrap();
-
+    pub fn attr(self, key: impl AsRef<str>, value: impl Value) -> Self {
+        let key = key.as_ref().to_string();
+        let this = self.clone();
+        value.bind_func(Box::new(move |x| this.node.set_attr(&key, x)));
         self
     }
+}
 
+impl<T> Tag<T> {
     /// Get the attribute of the `Tag` by key.
     ///
     /// # Examples
@@ -375,10 +427,36 @@ impl<T> Tag<T> {
     /// # }
     /// ```
     pub fn get_attr(&self, key: impl AsRef<str>) -> Option<String> {
-        self.node
-            .node
-            .unchecked_ref::<web_sys::Element>()
-            .get_attribute(key.as_ref())
+        self.node.get_attr(key)
+    }
+
+    /// Remove the attribute of the `Tag` by key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use valerie::prelude::*;
+    /// # use valerie::prelude::components::*;
+    /// # use wasm_bindgen_test::*;
+    /// # fn ui() -> Node {
+    /// let heading = input!("text").placeholder("Type Something");
+    /// div!(
+    ///     heading.clone(),
+    ///     br!(),
+    ///     button!("Remove placeholder").on_event("click", heading, |x, _| {
+    ///         x.rem_attr("placeholder");
+    ///     })
+    /// )
+    /// # .into()
+    /// # }
+    /// # wasm_bindgen_test_configure!(run_in_browser);
+    /// # #[wasm_bindgen_test]
+    /// # fn run() {
+    /// #     App::render_single(ui());
+    /// # }
+    /// ```
+    pub fn rem_attr(&self, key: impl AsRef<str>) {
+        self.node.remove_attr(key);
     }
 }
 
@@ -511,32 +589,32 @@ impl Tag<html::elements::Input> {
         })
     }
 
-    /// To add placeholder for the input element.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use valerie::prelude::*;
-    /// # use valerie::prelude::components::*;
-    /// # use wasm_bindgen_test::*;
-    /// # fn ui() -> Node {
-    /// input!("text")
-    ///     .placeholder("Enter something...")
-    /// # .into()
-    /// # }
-    /// # wasm_bindgen_test_configure!(run_in_browser);
-    /// # #[wasm_bindgen_test]
-    /// # fn run() {
-    /// #     App::render_single(ui());
-    /// # }
-    /// ```
-    pub fn placeholder(self, text: impl AsRef<str>) -> Self {
-        self.node
-            .unchecked_ref::<web_sys::HtmlInputElement>()
-            .set_placeholder(text.as_ref());
-
-        self
-    }
+    // /// To add placeholder for the input element.
+    // ///
+    // /// # Examples
+    // ///
+    // /// ```
+    // /// # use valerie::prelude::*;
+    // /// # use valerie::prelude::components::*;
+    // /// # use wasm_bindgen_test::*;
+    // /// # fn ui() -> Node {
+    // /// input!("text")
+    // ///     .placeholder("Enter something...")
+    // /// # .into()
+    // /// # }
+    // /// # wasm_bindgen_test_configure!(run_in_browser);
+    // /// # #[wasm_bindgen_test]
+    // /// # fn run() {
+    // /// #     App::render_single(ui());
+    // /// # }
+    // /// ```
+    // pub fn placeholder(self, text: impl AsRef<str>) -> Self {
+    //     self.node
+    //         .unchecked_ref::<web_sys::HtmlInputElement>()
+    //         .set_placeholder(text.as_ref());
+    //
+    //     self
+    // }
 }
 
 impl<T> Clone for Tag<T> {
