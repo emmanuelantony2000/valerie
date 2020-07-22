@@ -27,7 +27,8 @@ impl<T> Value for StateAtomic<T>
 where
     T: Copy + fmt::Display,
 {
-    fn bind_func(&self, func: Box<dyn FnMut(&str)>) {
+    fn bind_func(&self, mut func: Box<dyn FnMut(&str)>) {
+        func(&self.value().to_string());
         wasm_bindgen_futures::spawn_local(state::state_change(func, self.rx()));
     }
 }
@@ -36,7 +37,8 @@ impl<T> Value for StateMutex<T>
 where
     T: Clone + fmt::Display,
 {
-    fn bind_func(&self, func: Box<dyn FnMut(&str)>) {
+    fn bind_func(&self, mut func: Box<dyn FnMut(&str)>) {
+        func(&self.value().to_string());
         wasm_bindgen_futures::spawn_local(state::state_change(func, self.rx()));
     }
 }
@@ -45,7 +47,8 @@ impl<T, D> Value for StateGeneric<T, D>
 where
     D: Clone + fmt::Display,
 {
-    fn bind_func(&self, func: Box<dyn FnMut(&str)>) {
+    fn bind_func(&self, mut func: Box<dyn FnMut(&str)>) {
+        func(&self.value().to_string());
         wasm_bindgen_futures::spawn_local(state::state_change(func, self.rx()));
     }
 }

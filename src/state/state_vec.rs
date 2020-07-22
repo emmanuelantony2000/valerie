@@ -139,17 +139,10 @@ where
         V: component::Component + 'static,
         U: html::elements::HtmlElement,
     {
-        // let mut nodes = Vec::with_capacity(self.len());
         for i in self.value.read().iter() {
-            // nodes.push(object.clone()(i.clone()));
-            // enclose
-            //     .as_ref()
-            //     .append_child(nodes.last().unwrap().as_ref())
-            //     .unwrap();
             enclose.node.push_child(object.clone()(i.clone()).into())
         }
 
-        // let element = enclose.as_ref().clone();
         let node = enclose.node.clone();
         let (tx, rx) = unbuffered_channel();
         self.tx.write().push(tx);
@@ -157,24 +150,8 @@ where
             while let Some(change) = rx.receive().await {
                 match change {
                     Change::Insert(i, x) => node.insert_child(i, object.clone()(x).into()),
-                    // {
-                    // nodes.insert(i, object.clone()(x));
-                    // element
-                    //     .insert_before(&nodes[i].as_ref(), Some(&nodes[i + 1].as_ref()))
-                    //     .unwrap();
-                    // }
                     Change::Push(x) => node.push_child(object.clone()(x).into()),
-                    //     {
-                    //     nodes.push(object.clone()(x));
-                    //     element
-                    //         .append_child(&nodes.last().unwrap().as_ref())
-                    //         .unwrap();
-                    // }
                     Change::Remove(i) => node.remove_child(i),
-                    // {
-                    //     let node = nodes.remove(i);
-                    //     element.remove_child(&node.as_ref()).unwrap();
-                    // }
                     Change::Pop => node.pop_child(),
                 }
             }

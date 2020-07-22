@@ -128,9 +128,7 @@ macro_rules! h6 {
 #[macro_export]
 macro_rules! br {
     () => {{
-        let mut br = $crate::Tag::<$crate::html::elements::Br>::new();
-
-        br
+        $crate::Tag::<$crate::html::elements::Br>::new()
     }};
 }
 
@@ -195,17 +193,29 @@ macro_rules! li {
 macro_rules! input {
     ( $type:expr ) => {
         {
-            let mut input = $crate::Tag::<$crate::html::elements::Input>::new().attr("type", $type);
-            input
+            $crate::Tag::<$crate::html::elements::Input>::new().set_type($type)
         }
     };
     ( $type:expr, $( $x:expr ),* ) => {
         {
-            let mut input = $crate::Tag::<$crate::html::elements::Input>::new().attr("type", $type);
+            let mut input = $crate::Tag::<$crate::html::elements::Input>::new().set_type($type);
             $(
                 input = input.push($x);
             )*
             input
         }
     };
+}
+
+/// `img` element
+#[macro_export]
+macro_rules! img {
+    ( $src:expr ) => {{
+        $crate::Tag::<$crate::html::elements::Img>::new().src($src)
+    }};
+    ( $src:expr, $alt:expr ) => {{
+        $crate::Tag::<$crate::html::elements::Img>::new()
+            .src($src)
+            .alt($alt)
+    }};
 }

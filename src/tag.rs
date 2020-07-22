@@ -588,33 +588,6 @@ impl Tag<html::elements::Input> {
             ));
         })
     }
-
-    // /// To add placeholder for the input element.
-    // ///
-    // /// # Examples
-    // ///
-    // /// ```
-    // /// # use valerie::prelude::*;
-    // /// # use valerie::prelude::components::*;
-    // /// # use wasm_bindgen_test::*;
-    // /// # fn ui() -> Node {
-    // /// input!("text")
-    // ///     .placeholder("Enter something...")
-    // /// # .into()
-    // /// # }
-    // /// # wasm_bindgen_test_configure!(run_in_browser);
-    // /// # #[wasm_bindgen_test]
-    // /// # fn run() {
-    // /// #     App::render_single(ui());
-    // /// # }
-    // /// ```
-    // pub fn placeholder(self, text: impl AsRef<str>) -> Self {
-    //     self.node
-    //         .unchecked_ref::<web_sys::HtmlInputElement>()
-    //         .set_placeholder(text.as_ref());
-    //
-    //     self
-    // }
 }
 
 impl<T> Clone for Tag<T> {
@@ -634,38 +607,6 @@ where
         Self::new()
     }
 }
-
-// impl<T> Deref for Tag<T> {
-//     type Target = crate::Node;
-//
-//     fn deref(&self) -> &Self::Target {
-//         &self.node
-//     }
-// }
-//
-// impl<T> DerefMut for Tag<T> {
-//     fn deref_mut(&mut self) -> &mut Self::Target {
-//         &mut self.node
-//     }
-// }
-//
-// impl<T> AsRef<web_sys::Node> for Tag<T>
-// where
-//     T: JsCast,
-// {
-//     fn as_ref(&self) -> &web_sys::Node {
-//         self.node.unchecked_ref()
-//     }
-// }
-//
-// impl<T> From<Tag<T>> for web_sys::Node
-// where
-//     T: JsCast,
-// {
-//     fn from(tag: Tag<T>) -> Self {
-//         tag.node.unchecked_into()
-//     }
-// }
 
 impl<T> From<Tag<T>> for crate::Node {
     fn from(tag: Tag<T>) -> Self {

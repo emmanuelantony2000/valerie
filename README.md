@@ -20,7 +20,6 @@ A lot of work is left and you are welcome to try it out.*
  by following an MVVM architecture rather an MVC architecture.
  - Use state variables to update the UI where required.
  - Written without any unsafe code.
- - `nightly` Rust required.
 
 ## Architecture
 

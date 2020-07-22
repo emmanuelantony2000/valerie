@@ -178,6 +178,6 @@ pub mod prelude {
 
     /// The components module imports all the macros for the Tags
     pub mod components {
-        pub use crate::{br, button, div, h1, h2, h3, h4, h5, h6, input, li, ol, p, span, ul};
+        pub use crate::{br, button, div, h1, h2, h3, h4, h5, h6, img, input, li, ol, p, span, ul};
     }
 }
