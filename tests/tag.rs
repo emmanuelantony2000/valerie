@@ -6,7 +6,7 @@ use valerie::prelude::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
 fn new_ui() -> impl Component {
-    Tag::<web_sys::Element>::new("div").push("Hello, World!")
+    Tag::<html::elements::Div>::new().push("Hello, World!")
 }
 
 fn push_ui() -> impl Component {
@@ -14,7 +14,7 @@ fn push_ui() -> impl Component {
 }
 
 fn push_multiple_ui() -> impl Component {
-    div!().push_multiple(&[Node::from("Hello, "), Node::from("World!")])
+    div!().push_multiple(vec![Node::from("Hello, "), Node::from("World!")])
 }
 
 fn push_loop_ui() -> impl Component {
@@ -35,13 +35,28 @@ fn on_event_ui() -> impl Component {
         })
 }
 
+fn remove_event_ui() -> impl Component {
+    let message = StateMutex::new(String::from("App is running"));
+    button!(message.clone())
+        .on_event("mouseover", message.clone(), |x, _| {
+            x.put("Mouse pointer is in me".to_string());
+        })
+        .on_event("mouseout", message.clone(), |x, _| {
+            x.put("Mouse pointer is outside".to_string());
+        })
+        .on_event("mousedown", message.clone(), |x, t| {
+            x.put("Mouse button pressed".to_string());
+            t.remove_event("mouseout");
+        })
+}
+
 fn id_ui() -> impl Component {
     div!("Hello, World!").id("hello-world-id")
 }
 
 fn get_id_ui() -> impl Component {
     let heading = h1!("Hello, World!").id("hello-world-id");
-    div!(heading.clone(), br!(), "id ", heading.get_id())
+    div!(heading.clone(), br!(), "id ", heading.get_id().unwrap())
 }
 
 fn class_ui() -> impl Component {
@@ -50,7 +65,12 @@ fn class_ui() -> impl Component {
 
 fn get_class_ui() -> impl Component {
     let heading = h1!("Hello, World!").class("heading");
-    div!(heading.clone(), br!(), "class ", heading.get_class())
+    div!(
+        heading.clone(),
+        br!(),
+        "class ",
+        heading.get_class().join(" ")
+    )
 }
 
 fn attr_ui() -> impl Component {
@@ -64,6 +84,17 @@ fn get_attr_ui() -> impl Component {
         br!(),
         "attr ",
         heading.get_attr("id").unwrap()
+    )
+}
+
+fn rem_attr_ui() -> impl Component {
+    let heading = input!("text").placeholder("Type Something");
+    div!(
+        heading.clone(),
+        br!(),
+        button!("Remove placeholder").on_event("click", heading, |x, _| {
+            x.rem_attr("placeholder");
+        })
     )
 }
 
@@ -127,6 +158,11 @@ fn ui() -> Node {
         on_event_ui(),
         br!(),
         br!(),
+        "remove_event",
+        br!(),
+        remove_event_ui(),
+        br!(),
+        br!(),
         "id",
         br!(),
         id_ui(),
@@ -155,6 +191,11 @@ fn ui() -> Node {
         "get_attr",
         br!(),
         get_attr_ui(),
+        br!(),
+        br!(),
+        "rem_attr",
+        br!(),
+        rem_attr_ui(),
         br!(),
         br!(),
         "bind",
