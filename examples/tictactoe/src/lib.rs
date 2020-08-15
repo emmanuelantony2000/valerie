@@ -1,13 +1,13 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn square() -> Node {
-    button!("").attr("class", "square").into()
+fn square(i: u8) -> Node {
+    button!(format!("{}", i)).attr("class", "square").into()
 }
 
 fn board() -> Node {
-    fn render_square(_i: u8) -> Node {
-        square()
+    fn render_square(i: u8) -> Node {
+        square(i)
     }
 
     const STATUS: &str = "Next player: X";
