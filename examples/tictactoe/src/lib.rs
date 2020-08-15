@@ -2,7 +2,7 @@ use valerie::prelude::components::*;
 use valerie::prelude::*;
 
 fn square() -> Node {
-    button!("TODO").attr("class", "square").into()
+    button!("").attr("class", "square").into()
 }
 
 fn board() -> Node {
@@ -39,7 +39,7 @@ fn game() -> Node {
         ).attr("class", "game-board"),
         div!(
             div!(),
-            ol!(li!("one"))
+            ol!()
         ).attr("class", "game-info")
     ).attr("class", "game").into()
 }
