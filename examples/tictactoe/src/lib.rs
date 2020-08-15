@@ -1,33 +1,35 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn square(i: u8) -> Node {
-    button!(format!("{}", i)).attr("class", "square").into()
+fn square(_i: u8) -> Node {
+    let state = StateMutex::new(" ");
+    button!(state.clone())
+        .attr("class", "square")
+        .on_event("click", state.clone(), move |x, _| {
+            x.put("X");
+        }
+    ).into()
 }
 
 fn board() -> Node {
-    fn render_square(i: u8) -> Node {
-        square(i)
-    }
-
     const STATUS: &str = "Next player: X";
 
     div!(
         div!(STATUS).attr("class", "status"),
         div!(
-           render_square(0),
-           render_square(1),
-           render_square(2)
+           square(0),
+           square(1),
+           square(2)
         ).attr("class", "board-row"),
         div!(
-           render_square(3),
-           render_square(4),
-           render_square(5)
+           square(3),
+           square(4),
+           square(5)
         ).attr("class", "board-row"),
         div!(
-           render_square(6),
-           render_square(7),
-           render_square(8)
+           square(6),
+           square(7),
+           square(8)
         ).attr("class", "board-row")
     ).into()
 }
