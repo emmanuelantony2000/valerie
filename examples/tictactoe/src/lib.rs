@@ -6,50 +6,6 @@ use futures_intrusive::channel::{shared::StateReceiver, StateId};
 use std::fmt::Display;
 use core::fmt::{Formatter, Result};
 
-#[derive(Copy, Clone, PartialEq)]
-enum Square {
-    Empty,
-    X,
-    O,
-}
-
-impl Square {
-    pub fn rotate(self) -> Self {
-        match self {
-            Square::X => Square::O,
-            Square::O => Square::X,
-            _ => self
-        }
-    }
-}
-
-impl Display for Square {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let s = match self {
-            Square::Empty => "",
-            Square::X => "X",
-            Square::O => "O",
-        };
-        write!(f, "{}", s)
-    }
-}
-
-#[derive(Copy, Clone, PartialEq)]
-enum Status {
-    Playing,
-    Won,
-}
-
-impl Display for Status {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let s = match self {
-            Status::Playing => "Next player: ",
-            Status::Won => "Winner: ",
-        };
-        write!(f, "{}", s)
-    }
-}
-
 #[valerie(start)]
 pub fn run() {
     App::render_single(game());
@@ -109,6 +65,50 @@ fn board() -> Node {
             square(squares[8].clone(), status.clone(), next_player.clone())
         ).class("board-row")
     ).into()
+}
+
+#[derive(Copy, Clone, PartialEq)]
+enum Square {
+    Empty,
+    X,
+    O,
+}
+
+impl Square {
+    pub fn rotate(self) -> Self {
+        match self {
+            Square::X => Square::O,
+            Square::O => Square::X,
+            _ => self
+        }
+    }
+}
+
+impl Display for Square {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let s = match self {
+            Square::Empty => "",
+            Square::X => "X",
+            Square::O => "O",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+#[derive(Copy, Clone, PartialEq)]
+enum Status {
+    Playing,
+    Won,
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let s = match self {
+            Status::Playing => "Next player: ",
+            Status::Won => "Winner: ",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 fn square(state: StateAtomic<Square>, status: StateAtomic<Status>, next_player: StateAtomic<Square>) -> Node {
