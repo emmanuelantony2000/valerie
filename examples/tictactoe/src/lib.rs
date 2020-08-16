@@ -1,36 +1,57 @@
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-fn square(_i: u8) -> Node {
-    let state = StateMutex::new(" ");
+fn square(state: StateAtomic<&'static str>, next: StateAtomic<&'static str>) -> Node {
     button!(state.clone())
-        .attr("class", "square")
-        .on_event("click", state.clone(), move |x, _| {
-            x.put("X");
+        .class("square")
+        .on_event("click", state.clone(), move |s, _| {
+            let old_value = next.value();
+            s.put(old_value);
+            let new_value = match old_value {
+                "X" => "O",
+                "O" => "X",
+                _ => panic!(),
+            };
+            next.put(new_value);
         }
     ).into()
 }
 
 fn board() -> Node {
-    const STATUS: &str = "Next player: X";
+    let squares: [StateAtomic<&str>; 9] = [
+        // Can't use array init shorthand because StateAtomic not Copy
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+        StateAtomic::new(""),
+    ];
+
+    let next_player= StateAtomic::new("X");
 
     div!(
-        div!(STATUS).attr("class", "status"),
         div!(
-           square(0),
-           square(1),
-           square(2)
-        ).attr("class", "board-row"),
+            "Next player: ", next_player.clone()
+        ).class("status"),
         div!(
-           square(3),
-           square(4),
-           square(5)
-        ).attr("class", "board-row"),
+            square(squares[0].clone(), next_player.clone()),
+            square(squares[1].clone(), next_player.clone()),
+            square(squares[2].clone(), next_player.clone())
+        ).class("board-row"),
         div!(
-           square(6),
-           square(7),
-           square(8)
-        ).attr("class", "board-row")
+            square(squares[3].clone(), next_player.clone()),
+            square(squares[4].clone(), next_player.clone()),
+            square(squares[5].clone(), next_player.clone())
+        ).class("board-row"),
+        div!(
+            square(squares[6].clone(), next_player.clone()),
+            square(squares[7].clone(), next_player.clone()),
+            square(squares[8].clone(), next_player.clone())
+        ).class("board-row")
     ).into()
 }
 
