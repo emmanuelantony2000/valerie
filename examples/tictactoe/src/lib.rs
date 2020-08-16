@@ -4,7 +4,7 @@ use valerie::Channel;
 
 use futures_intrusive::channel::{shared::StateReceiver, StateId};
 use std::fmt::Display;
-use valerie::prelude::wasm_bindgen::__rt::core::fmt::Formatter;
+use core::fmt::{Formatter, Result};
 
 #[derive(Copy, Clone, PartialEq)]
 enum Square {
@@ -24,7 +24,7 @@ impl Square {
 }
 
 impl Display for Square {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let s = match self {
             Square::Empty => "",
             Square::X => "X",
@@ -41,7 +41,7 @@ enum Status {
 }
 
 impl Display for Status {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let s = match self {
             Status::Playing => "Next player: ",
             Status::Won => "Winner: ",
