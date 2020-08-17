@@ -9,7 +9,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 valerie = { path = "../../../valerie" }
-wasm-bindgen-futures = "0.4.15"
 futures-intrusive = "0.3.1"
 
 [profile.release]

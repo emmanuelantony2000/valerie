@@ -41,7 +41,7 @@ fn board() -> Node {
     let next_player = StateAtomic::new(Square::X);
 
     for square in &squares {
-        wasm_bindgen_futures::spawn_local(turn_checker(squares.to_vec(), square.rx(), next_player.clone(), status.clone()));
+        execute(turn_checker(squares.to_vec(), square.rx(), next_player.clone(), status.clone()));
     }
 
     div!(
