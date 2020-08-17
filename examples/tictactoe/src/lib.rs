@@ -3,8 +3,8 @@ use valerie::prelude::*;
 use valerie::Channel;
 
 use futures_intrusive::channel::{shared::StateReceiver, StateId};
-use std::fmt::Display;
-use core::fmt::{Formatter, Result};
+
+use core::fmt::{Display, Formatter, Result};
 
 #[valerie(start)]
 pub fn run() {
@@ -15,12 +15,12 @@ fn game() -> Node {
     div!(
         div!(
             board()
-        ).attr("class", "game-board"),
+        ).class("game-board"),
         div!(
             div!(),
             ol!()
-        ).attr("class", "game-info")
-    ).attr("class", "game").into()
+        ).class("game-info")
+    ).class("game").into()
 }
 
 fn board() -> Node {
