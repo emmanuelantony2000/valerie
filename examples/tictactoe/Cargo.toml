@@ -10,6 +10,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 valerie = { path = "../../../valerie" }
 futures-intrusive = "0.3.1"
+lazy_static = "1.4"
 
 [profile.release]
 lto = true

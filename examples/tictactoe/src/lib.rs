@@ -1,130 +1,86 @@
+#![allow(incomplete_features)]
+#![feature(const_generics)]
+#![feature(iterator_fold_self)]
+
+mod state;
+
+#[macro_use]
+extern crate lazy_static;
+
 use valerie::prelude::components::*;
 use valerie::prelude::*;
-use valerie::Channel;
 
-use futures_intrusive::channel::{shared::StateReceiver, StateId};
+use futures_intrusive::channel::{shared::StateSender, shared::StateReceiver, StateId};
 
-use core::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
+use std::collections::HashMap;
+use std::sync::Mutex;
+use std::hash::Hash;
+use std::cmp::Eq;
+use std::sync::Arc;
 
-#[valerie(start)]
-pub fn run() {
-    App::render_single(game());
-}
+use state::*;
+use futures_intrusive::channel::shared::state_broadcast_channel;
 
-fn game() -> Node {
-    div!(
-        div!(
-            board()
-        ).class("game-board"),
-        div!(
-            div!(),
-            ol!()
-        ).class("game-info")
-    ).class("game").into()
-}
-
-fn board() -> Node {
-    let squares: [StateAtomic<Square>; 9] = [
-        // Can't use array init shorthand because StateAtomic is not Copy
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-        StateAtomic::new(Square::Empty),
-    ];
-
-    let status = StateAtomic::new(Status::Playing);
-    let next_player = StateAtomic::new(Square::X);
-
-    for square in &squares {
-        execute(turn_checker(squares.to_vec(), square.rx(), next_player.clone(), status.clone()));
-    }
-
-    div!(
-        div!(
-            status.clone(),
-            next_player.clone()
-        ).class("status"),
-        div!(
-            square(squares[0].clone(), status.clone(), next_player.clone()),
-            square(squares[1].clone(), status.clone(), next_player.clone()),
-            square(squares[2].clone(), status.clone(), next_player.clone())
-        ).class("board-row"),
-        div!(
-            square(squares[3].clone(), status.clone(), next_player.clone()),
-            square(squares[4].clone(), status.clone(), next_player.clone()),
-            square(squares[5].clone(), status.clone(), next_player.clone())
-        ).class("board-row"),
-        div!(
-            square(squares[6].clone(), status.clone(), next_player.clone()),
-            square(squares[7].clone(), status.clone(), next_player.clone()),
-            square(squares[8].clone(), status.clone(), next_player.clone())
-        ).class("board-row")
-    ).into()
-}
+// Model
 
 #[derive(Copy, Clone, PartialEq)]
-enum Square {
+enum SquareMark {
     Empty,
     X,
     O,
 }
 
-impl Square {
-    pub fn rotate(self) -> Self {
+impl Default for SquareMark {
+    fn default() -> Self { Self::Empty }
+}
+
+impl SquareMark {
+    pub fn next(self) -> Self {
         match self {
-            Square::X => Square::O,
-            Square::O => Square::X,
+            SquareMark::X => SquareMark::O,
+            SquareMark::O => SquareMark::X,
             _ => self
         }
     }
 }
 
-impl Display for Square {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let s = match self {
-            Square::Empty => "",
-            Square::X => "X",
-            Square::O => "O",
-        };
-        write!(f, "{}", s)
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+struct SquareID(u8);
+
+#[derive(Copy, Clone)]
+struct Square {
+    _id: SquareID,
+    mark: SquareMark,
+}
+
+impl State<SquareID, Arc<Square>> for Square {
+    type Store = HashMap<SquareID, (Arc<Square>, Ready, StateSender<(Arc<Square>, Ready)>, StateReceiver<(Arc<Square>, Ready)>)>;
+
+    fn store() -> &'static Mutex<Self::Store> {
+        lazy_static! {
+            static ref SQUARES: Mutex<HashMap<SquareID, (Arc<Square>, Ready, StateSender<(Arc<Square>, Ready)>, StateReceiver<(Arc<Square>, Ready)>)>> = Mutex::new(HashMap::new());
+        }
+        &SQUARES
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
-enum Status {
-    Playing,
-    Won,
+struct BoardType {
+    board: [SquareID; 9],
 }
 
-impl Display for Status {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let s = match self {
-            Status::Playing => "Next player: ",
-            Status::Won => "Winner: ",
-        };
-        write!(f, "{}", s)
+impl Default for BoardType {
+    fn default() -> Self {
+        let mut board = [SquareID(0); 9];
+        for i in 0usize..9 {
+            board[i] = SquareID(i as u8);
+        }
+        Self { board }
     }
 }
 
-fn square(state: StateAtomic<Square>, status: StateAtomic<Status>, next_player: StateAtomic<Square>) -> Node {
-    button!(state.clone())
-        .class("square")
-        .on_event("click", (), move |_, _| {
-            if status.value() == Status::Playing && state.value() == Square::Empty {
-                state.put(next_player.value());
-            }
-        })
-        .into()
-}
-
-async fn turn_checker(squares: Vec<StateAtomic<Square>>, rx: StateReceiver<Channel>, next_player: StateAtomic<Square>, status: StateAtomic<Status>) {
-
-    fn calculate_winner(squares: &Vec<Square>) -> bool {
+impl BoardType {
+    fn calculate_winner(&self) -> bool {
         const LINES: [[usize; 3]; 8] = [
             [0, 1, 2],
             [3, 4, 5],
@@ -135,25 +91,123 @@ async fn turn_checker(squares: Vec<StateAtomic<Square>>, rx: StateReceiver<Chann
             [0, 4, 8],
             [2, 4, 6],
         ];
-        for [a, b, c] in &LINES {
-            let a = squares[*a];
-            let b = squares[*b];
-            let c = squares[*c];
-            if a != Square::Empty && a == b && a == c {
-                return true;
-            }
-        }
-        return false;
+        LINES.iter().map(|win| {
+            win.iter().map(|id| {
+                Square::get(self.board[*id]).unwrap().mark
+            })
+        }).any(|win| {
+            use SquareMark::*;
+            win.fold_first(|a, b| {
+                match a {
+                    Empty => Empty,
+                    _ => if a == b { a } else { Empty },
+                }
+            }).unwrap() != Empty
+        })
+    }
+}
+
+singleton!(Board, "board", Arc<BoardType>);
+
+#[derive(Copy, Clone, PartialEq)]
+enum Status {
+    Playing,
+    Won,
+}
+
+impl Default for Status {
+    fn default() -> Self { Self::Playing }
+}
+
+singleton!(GameStatus, "game", Status);
+singleton!(NextPlayer, "next", SquareMark);
+
+// Model-View
+
+#[valerie(start)]
+pub fn run() {
+    App::render_single(game());
+}
+
+fn game() -> Node {
+    NextPlayer::set(SquareMark::X);
+    execute(Board::turn_checker());
+    div!(
+        div!(
+            GameStatus::formatted(move |s| {
+                let s = match s {
+                    Status::Playing => "Next player: ",
+                    Status::Won => "Winner: ",
+                };
+                format!("{}: ", s)
+            }),
+            NextPlayer::formatted(move |p| { format!("{}", p)})
+        ).class("status"),
+        Board::node()
+    ).class("game")
+        .into()
+}
+
+impl Board {
+    pub fn node() -> Node {
+        let b = Board::get().board;
+        div!(
+            div!(
+                square(b[0]),
+                square(b[1]),
+                square(b[2])
+            ).class("board-row"),
+            div!(
+                square(b[3]),
+                square(b[4]),
+                square(b[5])
+            ).class("board-row"),
+            div!(
+                square(b[6]),
+                square(b[7]),
+                square(b[8])
+            ).class("board-row")
+        ).into()
     }
 
-    let mut old = StateId::new();
-    while let Some((new, _)) = rx.receive(old).await {
-        let squares: Vec<Square> = squares.iter().map(|s| s.value()).collect();
-        if calculate_winner(&squares) {
-            status.put(Status::Won);
-        } else {
-            next_player.put(next_player.value().rotate());
+    pub async fn turn_checker() {
+        let rx = Board::subscribe();
+        let mut old = StateId::new();
+        while let Some((new, _)) = rx.receive(old).await {
+            if Board::get().calculate_winner() {
+                GameStatus::set(Status::Won);
+            } else {
+                NextPlayer::set(NextPlayer::get().next());
+            }
+            old = new;
         }
-        old = new;
     }
+
+}
+
+impl Display for SquareMark {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let s = match self {
+            Self::Empty => "",
+            Self::X => "X",
+            Self::O => "O",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+fn square(id: SquareID) -> Node {
+    button!(Square::display(id))
+        .class("square")
+        .on_event("click", (), move |_, _| {
+            let status = GameStatus::get();
+            let current = Square::get(id).unwrap().mark;
+            if status == Status::Playing && current == SquareMark::Empty {
+                let mut new_value = *Square::get(id).unwrap();
+                new_value.mark = NextPlayer::get();
+                Square::update(id, Arc::new(new_value));
+                Board::notify();
+            }
+        })
+        .into()
 }
