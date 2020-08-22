@@ -11,7 +11,23 @@ crate-type = ["cdylib", "rlib"]
 valerie = { path = "../../../valerie" }
 futures-intrusive = "0.3.1"
 lazy_static = "1.4"
+log = "0.4"
+wasm-logger = "0.2"
+console_error_panic_hook = "0.1"
 
 [profile.release]
 lto = true
 opt-level = 3
+
+[dependencies.web-sys]
+version = "0.3.44"
+features = [
+#    "Window",
+#    "Document",
+     "Node",
+#    "Element",
+#    "HtmlElement",
+#    "HtmlDataElement",
+#    "Text",
+#    "EventTarget",
+]

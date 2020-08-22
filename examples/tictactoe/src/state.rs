@@ -2,10 +2,14 @@ use std::sync::Mutex;
 use std::hash::Hash;
 use std::cmp::Eq;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 use futures_intrusive::channel::{shared::StateSender, shared::StateReceiver};
 
 pub use futures_intrusive::channel::StateId;
+
+use valerie::prelude::{Node, execute};
+use futures_intrusive::channel::shared::state_broadcast_channel;
 
 #[derive(Copy, Clone)]
 pub enum Ready {
@@ -13,18 +17,20 @@ pub enum Ready {
     _Loading,
 }
 
-pub trait Relation<K: 'static + Eq + Hash, V: 'static + Clone> {
+pub trait Relation<K: 'static + Eq + Hash + Copy + Debug, V: 'static + Clone + Send> {
     type Store;
 
     fn store() -> &'static Mutex<HashMap<K, (V, Ready, StateSender<(V, Ready)>, StateReceiver<(V, Ready)>)>>;
 
     fn get(id: K) -> Option<V> {
+        info!("get: {:?}", id);
         let store = Self::store();
         let lock = store.lock().unwrap();
         (*lock).get(&id).map(|(v, _, _, _)| (*v).clone())
     }
 
-    fn insert(id: K, value: V, tx: StateSender<(V, Ready)>, rx: StateReceiver<(V, Ready)>) {
+    fn insert(id: K, value: V) {
+        let (tx, rx) = state_broadcast_channel();
         let store = Self::store();
         let mut lock = store.lock().unwrap();
         if let Some(_) = lock.insert(id, (value, Ready::Ready, tx, rx)) {
@@ -51,8 +57,31 @@ pub trait Relation<K: 'static + Eq + Hash, V: 'static + Clone> {
         (*rx).clone()
     }
 
-    fn display(_id: K) -> &'static str {
-        "display"
+    fn formatted(id: K, f: fn(v: V) -> String) -> Node {
+        info!("formatted: {:?}", &id);
+
+        let store = Self::store();
+        let lock = store.lock().unwrap();
+        let (v, _, _, rx) = lock.get(&id).expect("id not found to format");
+        let elem: Node = f((*v).clone()).into();
+
+        let elem_clone = elem.clone();
+        let rx_clone = (*rx).clone();
+
+        let formatter = async move || {
+            info!("formatter");
+            let mut old = StateId::new();
+            while let Some((new, _value)) = rx_clone.receive(old).await {
+                info!("formatting");
+                let v = Self::get(id).unwrap();
+                let s = f(v);
+                elem_clone.as_ref().set_node_value(Some(s.as_str()));
+                old = new;
+            }
+        };
+
+        execute(formatter());
+        elem
     }
 }
 
@@ -91,12 +120,29 @@ pub trait Singleton<V: 'static + Clone, const K: &'static str> {
         let _res = tx.send(*ready);
     }
 
-    fn formatted(_s: fn(v: V) -> String) -> &'static str {
-        "formatted"
-    }
+    fn formatted(f: fn(v: V) -> String) -> Node {
+        info!("formatted");
+        let store = Self::store();
+        let lock = store.lock().unwrap();
+        let (v, _, _, rx) = &(*lock);
+        let elem: Node = f(v.clone()).into();
 
-    fn display() -> &'static str {
-        "display"
+        let elem_clone = elem.clone();
+        let rx_clone = (*rx).clone();
+
+        let formatter = async move || {
+            info!("formatter");
+            let mut old = StateId::new();
+            while let Some((new, _value)) = rx_clone.receive(old).await {
+                info!("formatting");
+                let s = f(Self::get());
+                elem_clone.as_ref().set_node_value(Some(s.as_str()));
+                old = new;
+            }
+        };
+
+        execute(formatter());
+        elem
     }
 }
 

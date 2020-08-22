@@ -25,7 +25,7 @@ impl SquareMark {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct SquareID(u8);
 
 #[derive(Copy, Clone)]
@@ -34,26 +34,31 @@ pub struct Square {
     pub mark: SquareMark,
 }
 
+impl Square {
+    pub fn new(id: SquareID) -> Self {
+        Self {
+            _id: id,
+            mark: SquareMark::default(),
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct Board {
-    board: [SquareID; 9],
+    pub squares: [SquareID; 9],
 }
 
 impl Default for Board {
     fn default() -> Self {
-        let mut board = [SquareID(0); 9];
+        let mut squares = [SquareID(0); 9];
         for i in 0usize..9 {
-            board[i] = SquareID(i as u8);
+            squares[i] = SquareID(i as u8);
         }
-        Self { board }
+        Self { squares }
     }
 }
 
 impl<'a> Board {
-    pub fn squares(&'a self) -> &'a [SquareID; 9] {
-       &self.board
-    }
-
     pub fn calculate_winner(&self) -> bool {
         const LINES: [[usize; 3]; 8] = [
             [0, 1, 2],
@@ -68,11 +73,11 @@ impl<'a> Board {
         LINES.iter().map(|win| {
             // what mark is at each position?
             win.iter().map(|id| {
-                Square::get(self.board[*id]).unwrap().mark
+                Square::get(self.squares[*id]).unwrap().mark
             })
         }).any(|win| {
             // are any of the lines all the same mark?
-            use SquareMark::*;
+            use SquareMark::Empty;
             win.fold_first(|a, b| {
                 match a {
                     Empty => Empty,
@@ -95,6 +100,7 @@ impl Default for Status {
 
 // Square::get(SquareID) -> (Arc<Square>, Ready)
 relation!(Square, SquareID, Arc<Square>);
+
 // GameBoard::get() -> Arc<Board>
 singleton!(GameBoard, "game", Arc<Board>);
 singleton!(GameStatus, "game", Status);
