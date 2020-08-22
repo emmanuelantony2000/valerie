@@ -2,7 +2,14 @@
 #![feature(const_generics)]
 #![feature(iterator_fold_self)]
 
+mod model;
+
+use model::*;
+
+#[macro_use]
 mod state;
+
+use state::*;
 
 #[macro_use]
 extern crate lazy_static;
@@ -10,112 +17,8 @@ extern crate lazy_static;
 use valerie::prelude::components::*;
 use valerie::prelude::*;
 
-use futures_intrusive::channel::{shared::StateSender, shared::StateReceiver, StateId};
-
 use std::fmt::{Display, Formatter, Result};
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::hash::Hash;
-use std::cmp::Eq;
 use std::sync::Arc;
-
-use state::*;
-use futures_intrusive::channel::shared::state_broadcast_channel;
-
-// Model
-
-#[derive(Copy, Clone, PartialEq)]
-enum SquareMark {
-    Empty,
-    X,
-    O,
-}
-
-impl Default for SquareMark {
-    fn default() -> Self { Self::Empty }
-}
-
-impl SquareMark {
-    pub fn next(self) -> Self {
-        match self {
-            SquareMark::X => SquareMark::O,
-            SquareMark::O => SquareMark::X,
-            _ => self
-        }
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct SquareID(u8);
-
-#[derive(Copy, Clone)]
-struct Square {
-    _id: SquareID,
-    mark: SquareMark,
-}
-
-// Square::get(SquareID) -> (ArcSquare<Square>, Ready)
-relation!(Square, SquareID, Arc<Square>);
-
-struct BoardType {
-    board: [SquareID; 9],
-}
-
-impl Default for BoardType {
-    fn default() -> Self {
-        let mut board = [SquareID(0); 9];
-        for i in 0usize..9 {
-            board[i] = SquareID(i as u8);
-        }
-        Self { board }
-    }
-}
-
-impl BoardType {
-    fn calculate_winner(&self) -> bool {
-        const LINES: [[usize; 3]; 8] = [
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],
-            [0, 4, 8],
-            [2, 4, 6],
-        ];
-        LINES.iter().map(|win| {
-            win.iter().map(|id| {
-                Square::get(self.board[*id]).unwrap().mark
-            })
-        }).any(|win| {
-            use SquareMark::*;
-            win.fold_first(|a, b| {
-                match a {
-                    Empty => Empty,
-                    _ => if a == b { a } else { Empty },
-                }
-            }).unwrap() != Empty
-        })
-    }
-}
-
-// Board::get() -> ArcSquare<BoardType>
-singleton!(Board, "board", Arc<BoardType>);
-
-#[derive(Copy, Clone, PartialEq)]
-enum Status {
-    Playing,
-    Won,
-}
-
-impl Default for Status {
-    fn default() -> Self { Self::Playing }
-}
-
-singleton!(GameStatus, "game", Status);
-singleton!(NextPlayer, "next", SquareMark);
-
-// Model-View
 
 #[valerie(start)]
 pub fn run() {
@@ -124,7 +27,7 @@ pub fn run() {
 
 fn game() -> Node {
     NextPlayer::set(SquareMark::X);
-    execute(Board::turn_checker());
+    execute(GameBoard::turn_checker());
     div!(
         div!(
             GameStatus::formatted(move |s| {
@@ -134,16 +37,16 @@ fn game() -> Node {
                 };
                 format!("{}: ", s)
             }),
-            NextPlayer::formatted(move |p| { format!("{}", p)})
+            NextPlayer::display()
         ).class("status"),
-        Board::node()
-    ).class("game")
-        .into()
+        GameBoard::node()
+    ).class("game").into()
 }
 
-impl Board {
+impl GameBoard {
     pub fn node() -> Node {
-        let b = Board::get().board;
+        let b = Self::get();
+        let b = b.squares();
         div!(
             div!(
                 square(b[0]),
@@ -164,10 +67,10 @@ impl Board {
     }
 
     pub async fn turn_checker() {
-        let rx = Board::subscribe();
+        let rx = Self::subscribe();
         let mut old = StateId::new();
         while let Some((new, _)) = rx.receive(old).await {
-            if Board::get().calculate_winner() {
+            if GameBoard::get().calculate_winner() {
                 GameStatus::set(Status::Won);
             } else {
                 NextPlayer::set(NextPlayer::get().next());
@@ -175,7 +78,6 @@ impl Board {
             old = new;
         }
     }
-
 }
 
 impl Display for SquareMark {
@@ -193,13 +95,15 @@ fn square(id: SquareID) -> Node {
     button!(Square::display(id))
         .class("square")
         .on_event("click", (), move |_, _| {
+            use model::{Status::Playing, SquareMark::Empty};
+
             let status = GameStatus::get();
             let current = Square::get(id).unwrap().mark;
-            if status == Status::Playing && current == SquareMark::Empty {
+            if status == Playing && current == Empty {
                 let mut new_value = *Square::get(id).unwrap();
                 new_value.mark = NextPlayer::get();
                 Square::update(id, Arc::new(new_value));
-                Board::notify();
+                GameBoard::notify();
             }
         })
         .into()

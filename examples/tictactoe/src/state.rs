@@ -5,6 +5,8 @@ use std::collections::HashMap;
 
 use futures_intrusive::channel::{shared::StateSender, shared::StateReceiver};
 
+pub use futures_intrusive::channel::StateId;
+
 #[derive(Copy, Clone)]
 pub enum Ready {
     Ready,
@@ -101,16 +103,16 @@ pub trait Singleton<V: 'static + Clone, const K: &'static str> {
 #[macro_export]
 macro_rules! singleton {
     ($ExT:ident, $name:expr, $InT:ty) => {
-        struct $ExT {}
+        pub struct $ExT {}
 
-        impl Singleton<$InT, $name> for $ExT {
-            type Store = ($InT, Ready, StateSender<Ready>, StateReceiver<Ready>);
+        impl crate::state::Singleton<$InT, $name> for $ExT {
+            type Store = ($InT, crate::state::Ready, futures_intrusive::channel::shared::StateSender<crate::state::Ready>, futures_intrusive::channel::shared::StateReceiver<crate::state::Ready>);
 
-            fn store() -> &'static Mutex<($InT, Ready, StateSender<Ready>, StateReceiver<Ready>)> {
+            fn store() -> &'static std::sync::Mutex<($InT, crate::state::Ready, futures_intrusive::channel::shared::StateSender<crate::state::Ready>, futures_intrusive::channel::shared::StateReceiver<crate::state::Ready>)> {
                 lazy_static! {
-                    static ref STORE: Mutex<($InT, Ready, StateSender<Ready>, StateReceiver<Ready>)> = {
-                        let (tx, rx) = state_broadcast_channel();
-                        Mutex::new((<$InT>::default(), Ready::Ready, tx, rx))
+                    static ref STORE: std::sync::Mutex<($InT, crate::state::Ready, futures_intrusive::channel::shared::StateSender<crate::state::Ready>, futures_intrusive::channel::shared::StateReceiver<crate::state::Ready>)> = {
+                        let (tx, rx) = futures_intrusive::channel::shared::state_broadcast_channel();
+                        std::sync::Mutex::new((<$InT>::default(), crate::state::Ready::Ready, tx, rx))
                     };
                 }
                 &STORE
@@ -122,13 +124,13 @@ macro_rules! singleton {
 #[macro_export]
 macro_rules! relation {
     ($ExT:ident, $K:ty, $V:ty) => {
-        impl Relation<$K, $V> for $ExT {
-            type Store = HashMap<$V, ($V, Ready, StateSender<($V, Ready)>, StateReceiver<($V, Ready)>)>;
+        impl crate::state::Relation<$K, $V> for $ExT {
+            type Store = HashMap<$V, ($V, crate::state::Ready, futures_intrusive::channel::shared::StateSender<($V, crate::state::Ready)>, futures_intrusive::channel::shared::StateReceiver<($V, crate::state::Ready)>)>;
 
-            fn store() -> &'static Mutex<HashMap<$K, ($V, Ready, StateSender<($V, Ready)>, StateReceiver<($V, Ready)>)>> {
+            fn store() -> &'static std::sync::Mutex<HashMap<$K, ($V, crate::state::Ready, futures_intrusive::channel::shared::StateSender<($V, crate::state::Ready)>, futures_intrusive::channel::shared::StateReceiver<($V, crate::state::Ready)>)>> {
                 lazy_static! {
-                    static ref STORE: Mutex<HashMap<$K, ($V, Ready, StateSender<($V, Ready)>, StateReceiver<($V, Ready)>)>> = {
-                        Mutex::new(HashMap::new())
+                    static ref STORE: std::sync::Mutex<HashMap<$K, ($V, crate::state::Ready, futures_intrusive::channel::shared::StateSender<($V, crate::state::Ready)>, futures_intrusive::channel::shared::StateReceiver<($V, crate::state::Ready)>)>> = {
+                        std::sync::Mutex::new(HashMap::new())
                     };
                 }
                 &STORE
