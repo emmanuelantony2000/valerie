@@ -11,7 +11,7 @@ pub enum Ready {
     _Loading,
 }
 
-pub trait State<K: 'static + Eq + Hash, V: 'static + Clone> {
+pub trait Relation<K: 'static + Eq + Hash, V: 'static + Clone> {
     type Store;
 
     fn store() -> &'static Mutex<HashMap<K, (V, Ready, StateSender<(V, Ready)>, StateReceiver<(V, Ready)>)>>;
@@ -111,6 +111,24 @@ macro_rules! singleton {
                     static ref STORE: Mutex<($InT, Ready, StateSender<Ready>, StateReceiver<Ready>)> = {
                         let (tx, rx) = state_broadcast_channel();
                         Mutex::new((<$InT>::default(), Ready::Ready, tx, rx))
+                    };
+                }
+                &STORE
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! relation {
+    ($ExT:ident, $K:ty, $V:ty) => {
+        impl Relation<$K, $V> for $ExT {
+            type Store = HashMap<$V, ($V, Ready, StateSender<($V, Ready)>, StateReceiver<($V, Ready)>)>;
+
+            fn store() -> &'static Mutex<HashMap<$K, ($V, Ready, StateSender<($V, Ready)>, StateReceiver<($V, Ready)>)>> {
+                lazy_static! {
+                    static ref STORE: Mutex<HashMap<$K, ($V, Ready, StateSender<($V, Ready)>, StateReceiver<($V, Ready)>)>> = {
+                        Mutex::new(HashMap::new())
                     };
                 }
                 &STORE

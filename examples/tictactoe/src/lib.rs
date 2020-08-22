@@ -54,16 +54,8 @@ struct Square {
     mark: SquareMark,
 }
 
-impl State<SquareID, Arc<Square>> for Square {
-    type Store = HashMap<SquareID, (Arc<Square>, Ready, StateSender<(Arc<Square>, Ready)>, StateReceiver<(Arc<Square>, Ready)>)>;
-
-    fn store() -> &'static Mutex<Self::Store> {
-        lazy_static! {
-            static ref SQUARES: Mutex<HashMap<SquareID, (Arc<Square>, Ready, StateSender<(Arc<Square>, Ready)>, StateReceiver<(Arc<Square>, Ready)>)>> = Mutex::new(HashMap::new());
-        }
-        &SQUARES
-    }
-}
+// Square::get(SquareID) -> (ArcSquare<Square>, Ready)
+relation!(Square, SquareID, Arc<Square>);
 
 struct BoardType {
     board: [SquareID; 9],
@@ -107,6 +99,7 @@ impl BoardType {
     }
 }
 
+// Board::get() -> ArcSquare<BoardType>
 singleton!(Board, "board", Arc<BoardType>);
 
 #[derive(Copy, Clone, PartialEq)]
