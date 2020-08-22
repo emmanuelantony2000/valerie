@@ -24,7 +24,6 @@ use valerie::prelude::components::*;
 use valerie::prelude::*;
 
 use std::fmt::{Display, Formatter, Result};
-use std::sync::Arc;
 use std::panic;
 
 #[valerie(start)]
@@ -37,7 +36,7 @@ pub fn run() {
 
 fn game() -> Node {
     info!("game");
-    NextPlayer::set(SquareMark::X);
+    NextPlayer::mutate(NextPlayerChange::Start);
     execute(GameBoard::turn_checker());
     div!(
         div!(
@@ -84,9 +83,9 @@ impl GameBoard {
         while let Some((new, _)) = rx.receive(old).await {
             info!("turn");
             if GameBoard::get().calculate_winner() {
-                GameStatus::set(Status::Won);
+                GameStatus::mutate(StatusChange::Won);
             } else {
-                NextPlayer::set(NextPlayer::get().next());
+                NextPlayer::mutate(NextPlayerChange::Next);
             }
             old = new;
         }
@@ -106,18 +105,14 @@ impl Display for SquareMark {
 
 fn square(id: SquareID) -> Node {
     info!("square");
-    Square::insert(id, Arc::new(Square::new(id)));
     button!(Square::formatted(id, |s| { debug!("Sq"); format!("{}", s.mark)}))
         .class("square")
         .on_event("click", (), move |_, _| {
             use model::{Status::Playing, SquareMark::Empty};
-
             let status = GameStatus::get();
             let current = Square::get(id).unwrap().mark;
             if status == Playing && current == Empty {
-                let mut new_value = *Square::get(id).unwrap();
-                new_value.mark = NextPlayer::get();
-                Square::update(id, Arc::new(new_value));
+                Square::mutate(id, SquareChange::Mark(NextPlayer::get()));
                 GameBoard::notify();
             }
         })

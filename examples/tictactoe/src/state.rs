@@ -11,6 +11,10 @@ pub use futures_intrusive::channel::StateId;
 use valerie::prelude::{Node, execute};
 use futures_intrusive::channel::shared::state_broadcast_channel;
 
+pub trait Mutator<V> {
+    fn mutate(self, v: &V) -> V;
+}
+
 #[derive(Copy, Clone)]
 pub enum Ready {
     Ready,
@@ -38,16 +42,17 @@ pub trait Relation<K: 'static + Eq + Hash + Copy + Debug, V: 'static + Clone + S
         }
     }
 
-    fn update(id: K, value: V) {
+    fn mutate(id: K, m: impl Mutator<V>) {
         let store = Self::store();
         let mut lock = store.lock().unwrap();
-        let (tx, rx) = {
-            let (_, _, tx, rx) = lock.get(&id).unwrap();
-            ((*tx).clone(), (*rx).clone())
+        let (v, tx, rx) = {
+            let (v, _, tx, rx) = lock.get(&id).unwrap();
+            (v, (*tx).clone(), (*rx).clone())
         };
-        let new_value = (value.clone(), Ready::Ready, tx.clone(), rx.clone());
+        let mutated_value = m.mutate(v);
+        let new_value = (mutated_value.clone(), Ready::Ready, tx.clone(), rx.clone());
         lock.insert(id, new_value);
-        let _res = tx.send((value, Ready::Ready));
+        let _res = tx.send((mutated_value, Ready::Ready));
     }
 
     fn subscribe(id: K) -> StateReceiver<(V, Ready)> {
@@ -96,14 +101,14 @@ pub trait Singleton<V: 'static + Clone, const K: &'static str> {
         (*lock).0.clone()
     }
 
-    fn set(v: V) {
+    fn mutate(m: impl Mutator<V>) {
         let store = Self::store();
         let mut lock = store.lock().unwrap();
-        let (tx, rx) = {
-            let (_, _, tx, rx) = &(*lock);
-            ((*tx).clone(), (*rx).clone())
+        let (v, tx, rx) = {
+            let (v, _, tx, rx) = &(*lock);
+            (v, (*tx).clone(), (*rx).clone())
         };
-        (*lock) = (v, Ready::Ready, tx.clone(), rx);
+        (*lock) = (m.mutate(v), Ready::Ready, tx.clone(), rx);
         let _res = tx.send(Ready::Ready);
     }
 

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::state::Relation;
+use crate::state::{Relation, Mutator};
 use crate::{relation, singleton};
 
 #[derive(Copy, Clone, PartialEq)]
@@ -15,12 +15,25 @@ impl Default for SquareMark {
     fn default() -> Self { Self::Empty }
 }
 
-impl SquareMark {
-    pub fn next(self) -> Self {
+pub enum NextPlayerChange {
+    Start,
+    Next,
+}
+
+impl Mutator<SquareMark> for NextPlayerChange {
+    fn mutate(self, v: &SquareMark) -> SquareMark {
+        use SquareMark::*;
         match self {
-            SquareMark::X => SquareMark::O,
-            SquareMark::O => SquareMark::X,
-            _ => self
+            Self::Start => {
+                X
+            },
+            Self::Next => {
+                match v {
+                    X => O,
+                    O => X,
+                    Empty => Empty,
+                }
+            },
         }
     }
 }
@@ -30,16 +43,30 @@ pub struct SquareID(u8);
 
 #[derive(Copy, Clone)]
 pub struct Square {
-    _id: SquareID,
+    id: SquareID,
     pub mark: SquareMark,
 }
 
 impl Square {
     pub fn new(id: SquareID) -> Self {
         Self {
-            _id: id,
+            id,
             mark: SquareMark::default(),
         }
+    }
+}
+
+pub enum SquareChange {
+    Mark(SquareMark),
+}
+
+impl Mutator<Arc<Square>> for SquareChange {
+    fn mutate(self, v: &Arc<Square>) -> Arc<Square> {
+        let mut v: Square = **v;
+        match self {
+            Self::Mark(mark) => v.mark = mark,
+        }
+        Arc::new(v)
     }
 }
 
@@ -52,7 +79,9 @@ impl Default for Board {
     fn default() -> Self {
         let mut squares = [SquareID(0); 9];
         for i in 0usize..9 {
-            squares[i] = SquareID(i as u8);
+            let square = Square::new(SquareID(i as u8));
+            Square::insert(square.id, Arc::new(square));
+            squares[i] = square.id;
         }
         Self { squares }
     }
@@ -96,6 +125,18 @@ pub enum Status {
 
 impl Default for Status {
     fn default() -> Self { Self::Playing }
+}
+
+pub enum StatusChange {
+    Won,
+}
+
+impl Mutator<Status> for StatusChange {
+    fn mutate(self, _v: &Status) -> Status {
+        match self {
+            Self::Won => Status::Won,
+        }
+    }
 }
 
 // Square::get(SquareID) -> (Arc<Square>, Ready)
