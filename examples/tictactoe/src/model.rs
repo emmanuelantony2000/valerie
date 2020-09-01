@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::store::{Mutator, Relation};
 use crate::{remote, singleton};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, PartialEq, Debug, Deserialize)]
 pub enum SquareMark {
@@ -70,13 +70,13 @@ pub enum SquareChange {
     Mark(SquareMark),
 }
 
-impl Mutator<ArcSquare> for SquareChange {
-    fn mutate(&self, v: &ArcSquare) -> ArcSquare {
-        let mut v: Square = Square::clone(&(*v).0);
+impl Mutator<Arc<Square>> for SquareChange {
+    fn mutate(&self, v: &Arc<Square>) -> Arc<Square> {
+        let mut v: Square = Square::clone(v);
         match self {
             Self::Mark(mark) => v.mark = *mark,
         }
-        ArcSquare(Arc::new(v))
+        Arc::new(v)
     }
 }
 
@@ -109,13 +109,13 @@ impl<'a> Board {
             [0, 4, 8],
             [2, 4, 6],
         ];
-        let template = ArcSquare::default();
+        let template = Arc::new(Square::default());
         LINES
             .iter()
             .map(|win| {
                 // what mark is at each position?
                 win.iter()
-                    .map(|id| Square::get(self.squares[*id], &template).0.0.mark)
+                    .map(|id| Square::get(self.squares[*id], &template).0.mark)
             })
             .any(|win| {
                 // are any of the lines all the same mark?
@@ -161,29 +161,15 @@ impl Mutator<Status> for StatusChange {
     }
 }
 
-#[derive(Clone)]
-pub struct ArcSquare(pub Arc<Square>);
-
-// Square::get(SquareID) -> (SquareType, Ready)
-remote!(Square, SquareID, ArcSquare);
+// Square::get(SquareID) -> (ArcSquare, Ready)
+remote!(
+    Square,
+    SquareID,
+    Arc<Square>,
+    "https://jsonplaceholder.typicode.com/todos/1"
+);
 
 // GameBoard::get() -> Arc<Board>
 singleton!(GameBoard, Arc<Board>);
 singleton!(GameStatus, Status);
 singleton!(NextPlayer, SquareMark);
-
-impl Default for ArcSquare {
-    fn default() -> Self {
-        Self(Arc::new(Square::default()))
-    }
-}
-
-impl<'de> Deserialize<'de> for ArcSquare {
-    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let data = Square::deserialize(deserializer)?;
-        Ok(Self(Arc::new(data)))
-    }
-}

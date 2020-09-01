@@ -5,6 +5,7 @@ use valerie::prelude::components::*;
 use valerie::prelude::*;
 
 use std::fmt::{Display, Formatter, Result};
+use std::sync::Arc;
 
 pub fn game() -> Node {
     info!("game");
@@ -82,9 +83,13 @@ impl Display for SquareMark {
 
 fn square(id: SquareID) -> Node {
     info!("square");
-    button!(Square::formatted(id, |s, _r| {
+    button!(Square::formatted(id, |s, r| {
         debug!("Sq");
-        format!("{}", s.0.mark)
+        if let Ready::Ready = r {
+            format!("{}", s.mark)
+        } else {
+            format!("?")
+        }
     }))
     .class("square")
     .on_event("click", (), move |_, _| {
@@ -92,15 +97,9 @@ fn square(id: SquareID) -> Node {
         use Status::Playing;
 
         let status = GameStatus::get();
-        let current = <Square as Local<SquareID, ArcSquare>>::get(id, &ArcSquare::default())
-            .0
-             .0
-            .mark;
+        let current = Square::get(id, &Arc::new(Square::default())).0.mark;
         if status == Playing && current == Empty {
-            <Square as Local<SquareID, ArcSquare>>::mutate(
-                id,
-                SquareChange::Mark(NextPlayer::get()),
-            );
+            Square::mutate(id, &SquareChange::Mark(NextPlayer::get()));
             GameBoard::notify();
         }
     })

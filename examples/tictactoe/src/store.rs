@@ -1,12 +1,13 @@
-use std::cmp::Eq;
-use std::collections::HashMap;
-use std::hash::Hash;
-use std::sync::Mutex;
-
 use futures_intrusive::channel::shared::{state_broadcast_channel, StateReceiver, StateSender};
 pub use futures_intrusive::channel::StateId;
 
 use valerie::prelude::{execute, Node};
+
+use std::cmp::Eq;
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::hash::Hash;
+use std::sync::Mutex;
 
 pub trait Mutator<V> {
     fn mutate(&self, v: &V) -> V;
@@ -15,33 +16,57 @@ pub trait Mutator<V> {
 #[derive(Copy, Clone)]
 pub enum Ready {
     Ready,
-    _Loading,
+    Loading,
     _Editing,
     _Dirty,
     _Saving,
     _Error,
 }
 
-pub trait Watch<K, V: Clone> {
-    fn subscribe(_id: K) -> StateReceiver<(V, Ready)> {
-        unimplemented!()
-    }
-    fn notify(_id: K) {}
-}
+pub trait Relation<K: 'static + Copy + Eq + Hash + Debug, V: 'static + Clone + Default + Send> {
+    type Store;
 
-pub trait Relation<K: Eq + Hash + Copy, V: Clone + Default> {
-    fn get(_id: K, _template: &V) -> (V, Ready) {
-        unimplemented!()
-    }
-    fn new(_id: K) {}
-    fn mutate(_id: K, _mutation: impl Mutator<V>) {}
-}
+    fn store(
+    ) -> &'static Mutex<HashMap<K, (V, Ready, StateSender<(V, Ready)>, StateReceiver<(V, Ready)>)>>;
 
-pub trait Format<K: 'static + Copy + Eq + Hash, V: 'static + Clone + Default>:
-    Watch<K, V> + Relation<K, V>
-{
+    fn get(id: K, template: &V) -> (V, Ready);
+
+    fn insert(id: K, value: V) {
+        info!("insert: {:?}", id);
+        let (tx, rx) = state_broadcast_channel();
+        let store = Self::store();
+        let mut lock = store.lock().unwrap();
+        let value = (value, Ready::_Dirty, tx, rx);
+        let res = lock.insert(id, value);
+        assert!(res.is_none());
+    }
+
+    fn mutate(id: K, m: &impl Mutator<V>);
+
+    fn subscribe(id: K) -> StateReceiver<(V, Ready)> {
+        info!("subscribe: {:?}", id);
+        let store = Self::store();
+        let lock = store.lock().unwrap();
+        let (_, _, _, rx) = lock.get(&id).unwrap();
+        (*rx).clone()
+    }
+
+    fn notify(id: K) {
+        info!("notify: {:?}", id);
+        let store = Self::store();
+        let lock = store.lock().unwrap();
+        let (v, r, tx, _) = lock.get(&id).unwrap();
+        let _res = tx.send((v.clone(), *r));
+    }
+
+    // fn formatter(id: K, f: fn(v: V, r: Ready) -> Node) -> Formatter<V> {
+    //     let (v, r) = Self::get(id, &V::default());
+    //     let rx = Self::subscribe(id);
+    //     Formatter::new(v, r, rx, f)
+    // }
+
     fn formatted(id: K, f: fn(v: V, r: Ready) -> String) -> Node {
-        info!("formatted");
+        info!("formatted: {:?}", id);
 
         let (v, r) = Self::get(id, &V::default());
         let elem: Node = f(v, r).into();
@@ -65,34 +90,26 @@ pub trait Format<K: 'static + Copy + Eq + Hash, V: 'static + Clone + Default>:
     }
 }
 
-pub trait Local<K: 'static + Copy + Eq + Hash, V: 'static + Clone + Default + Send>:
-    Watch<K, V> + Relation<K, V> + Format<K, V>
+pub trait Local<K: 'static + Copy + Eq + Hash + Debug, V: 'static + Clone + Default + Send>:
+    Relation<K, V>
 {
-    type Store;
-
-    fn store(
-    ) -> &'static Mutex<HashMap<K, (V, Ready, StateSender<(V, Ready)>, StateReceiver<(V, Ready)>)>>;
-
     fn get(id: K, template: &V) -> (V, Ready) {
-        let store = Self::store();
-        let lock = store.lock().unwrap();
-        let res = (*lock).get(&id);
-        match res {
-            Some((v, r, _, _)) => ((*v).clone(), *r),
-            None => (V::clone(template), Ready::_Loading),
+        info!("get: {:?}", id);
+        {
+            let store = Self::store();
+            let lock = store.lock().unwrap();
+            let res = (*lock).get(&id);
+            if let Some((v, r, _, _)) = res {
+                return ((*v).clone(), *r);
+            };
         }
+        let result = V::clone(template);
+        Self::insert(id, result.clone());
+        (result, Ready::_Dirty)
     }
 
-    fn insert(id: K, value: V) {
-        let (tx, rx) = state_broadcast_channel();
-        let store = Self::store();
-        let mut lock = store.lock().unwrap();
-        let value = (value, Ready::Ready, tx, rx);
-        let res = lock.insert(id, value);
-        assert!(res.is_none());
-    }
-
-    fn mutate(id: K, m: impl Mutator<V>) {
+    fn mutate(id: K, m: &impl Mutator<V>) {
+        info!("mutate: {:?}", id);
         let store = Self::store();
         let mut lock = store.lock().unwrap();
         let (v, tx, rx) = {
@@ -103,20 +120,6 @@ pub trait Local<K: 'static + Copy + Eq + Hash, V: 'static + Clone + Default + Se
         let new_value = (mutated_value.clone(), Ready::Ready, tx.clone(), rx.clone());
         lock.insert(id, new_value);
         let _res = tx.send((mutated_value, Ready::Ready));
-    }
-
-    fn subscribe(id: K) -> StateReceiver<(V, Ready)> {
-        let store = Self::store();
-        let lock = store.lock().unwrap();
-        let (_, _, _, rx) = lock.get(&id).unwrap();
-        (*rx).clone()
-    }
-
-    fn notify(id: K) {
-        let store = Self::store();
-        let lock = store.lock().unwrap();
-        let (v, r, tx, _) = lock.get(&id).unwrap();
-        let _res = tx.send((v.clone(), *r));
     }
 }
 
@@ -225,8 +228,8 @@ macro_rules! singleton {
 
 #[macro_export]
 macro_rules! relation {
-    ($ExT:ident, $K:ty, $V:ty, $F:ty) => {
-        impl crate::store::Local<$K, $V> for $ExT {
+    ($ExT:ident, $K:ty, $V:ty) => {
+        impl crate::store::Relation<$K, $V> for $ExT {
             type Store = HashMap<
                 $V,
                 (
