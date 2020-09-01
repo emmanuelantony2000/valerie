@@ -82,13 +82,10 @@ impl Display for SquareMark {
 
 fn square(id: SquareID) -> Node {
     info!("square");
-    button!(<Square as Local<SquareID, ArcSquare>>::formatted(
-        id,
-        |s, _r| {
-            debug!("Sq");
-            format!("{}", s.0.mark)
-        }
-    ))
+    button!(Square::formatted(id, |s, _r| {
+        debug!("Sq");
+        format!("{}", s.0.mark)
+    }))
     .class("square")
     .on_event("click", (), move |_, _| {
         use SquareMark::Empty;

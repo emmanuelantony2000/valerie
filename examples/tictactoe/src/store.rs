@@ -118,33 +118,6 @@ pub trait Local<K: 'static + Copy + Eq + Hash, V: 'static + Clone + Default + Se
         let (v, r, tx, _) = lock.get(&id).unwrap();
         let _res = tx.send((v.clone(), *r));
     }
-
-    fn formatted(id: K, f: fn(v: V, r: Ready) -> String) -> Node {
-        info!("formatted");
-
-        let store = Self::store();
-        let lock = store.lock().unwrap();
-        let (v, r, _, rx) = lock.get(&id).expect("id not found to format");
-        let elem: Node = f((*v).clone(), *r).into();
-
-        let elem_clone = elem.clone();
-        let rx_clone = (*rx).clone();
-
-        let formatter = async move || {
-            info!("formatter");
-            let mut old = StateId::new();
-            while let Some((new, _value)) = rx_clone.receive(old).await {
-                info!("formatting");
-                let (v, r): (V, Ready) = <Self as Local<K, V>>::get(id, &V::default());
-                let s = f(v, r);
-                elem_clone.as_ref().set_node_value(Some(s.as_str()));
-                old = new;
-            }
-        };
-
-        execute(formatter());
-        elem
-    }
 }
 
 pub trait Singleton<V: 'static + Clone + Default> {
