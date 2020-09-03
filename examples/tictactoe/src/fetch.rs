@@ -4,7 +4,8 @@ use valerie::prelude::execute;
 
 use js_sys::Promise;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsValue;
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
 
@@ -36,11 +37,18 @@ pub trait Remote<
         info!("remote::fetch: {:?}", id);
         let callback = move |js_val: JsValue| {
             info!("fetch callback: {:?}", js_val);
-            window()
+            let then = Closure::wrap(Box::new(move || {
+                info!("fetch delay complete");
+                let (value, _) = Self::get(id, &V::default());
+                Self::update(id, value);
+            }) as Box<dyn Fn()>);
+            let _res = window()
                 .unwrap()
-                .alert_with_message("release a fetch message");
-            let (value, _) = Self::get(id, &V::default());
-            Self::update(id, value)
+                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                    then.as_ref().unchecked_ref(),
+                    1000,
+                );
+            then.forget();
         };
         let window: web_sys::Window = window().unwrap();
         let url = Self::endpoint(id);
@@ -54,11 +62,18 @@ pub trait Remote<
         info!("fetch::mutate");
         let callback = move |js_val: JsValue| {
             info!("relay callback {:?}", js_val);
-            window()
+            let then = Closure::wrap(Box::new(move || {
+                info!("relay delay complete");
+                let (value, _) = Self::get(id, &V::default());
+                Self::update(id, value);
+            }) as Box<dyn Fn()>);
+            let _res = window()
                 .unwrap()
-                .alert_with_message("release a mutation message");
-            let (value, _) = Self::get(id, &V::default()); // kludge - normally server returns latest
-            Self::update(id, value);
+                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                    then.as_ref().unchecked_ref(),
+                    1000,
+                );
+            then.forget();
         };
         let window: web_sys::Window = window().unwrap();
         let url = Self::endpoint(id);

@@ -27,9 +27,9 @@ opt-level = 3
 [dependencies.web-sys]
 version = "0.3.44"
 features = [
-#    "Window",
+    "Window",
 #    "Document",
-     "Node",
+    "Node",
 #    "Element",
 #    "HtmlElement",
 #    "HtmlDataElement",
