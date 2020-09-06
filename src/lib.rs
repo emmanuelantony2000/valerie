@@ -1,5 +1,6 @@
 #![no_std]
 #![deny(missing_docs)]
+#![feature(async_closure)]
 
 //! Rust front-end framework for building web apps.
 //!
@@ -150,10 +151,14 @@ mod node;
 mod tag;
 mod value;
 
+/// Traits for model objects to be remotely fetched
+pub mod fetch;
 /// Contains the HTML Tags
 pub mod html;
 /// Contains the structs for defining States
 pub mod state;
+/// Traits for model objects to be sources for change
+pub mod store;
 
 pub use app::App;
 pub use channel::Channel;
