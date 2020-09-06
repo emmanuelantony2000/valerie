@@ -1,9 +1,8 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use alloc::sync::Arc;
 
-use crate::store::{Mutator, Relation};
-use crate::{remote, singleton};
 use serde::{Deserialize, Serialize};
+use valerie::store::{Mutator, Relation};
+use valerie::{remote, singleton};
 
 #[derive(Copy, Clone, PartialEq, Debug, Deserialize)]
 pub enum SquareMark {

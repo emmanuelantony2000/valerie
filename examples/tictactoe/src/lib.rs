@@ -2,11 +2,7 @@
 #![feature(iterator_fold_self)]
 #![feature(async_closure)]
 
-#[macro_use]
-mod fetch;
 mod model;
-#[macro_use]
-mod store;
 mod view;
 
 #[macro_use]
@@ -16,6 +12,8 @@ extern crate lazy_static;
 extern crate log;
 
 extern crate console_error_panic_hook;
+
+extern crate alloc;
 
 use valerie::prelude::*;
 

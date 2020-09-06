@@ -1,6 +1,5 @@
+use crate::prelude::execute;
 use crate::store::{Mutator, Ready, Relation};
-
-use valerie::prelude::execute;
 
 use js_sys::Promise;
 use serde::{Deserialize, Serialize};
@@ -9,21 +8,25 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
 
-use std::fmt::Debug;
-use std::hash::Hash;
+use alloc::boxed::Box;
+use alloc::string::String;
+use core::fmt::Debug;
+use core::hash::Hash;
 
+/// Type is `relation` and can be fetched from remote service
 pub trait Remote<
     'de,
     K: 'static + Copy + Eq + Hash + Debug + Serialize + Deserialize<'de>,
     V: 'static + Clone + Default + Send + Deserialize<'de>,
 >: Relation<K, V>
 {
+    /// endpoint url for fetch
     fn endpoint(id: K) -> String;
 
+    /// modify the local database with the results of a fetch
     fn update(id: K, value: V) {
-        info!("remote::update: {:?}", id);
         let store = Self::store();
-        let mut lock = store.lock().unwrap();
+        let mut lock = store.lock();
         let (tx, rx) = {
             let (_, _, tx, rx) = lock.get(&id).unwrap();
             ((*tx).clone(), (*rx).clone())
@@ -33,12 +36,10 @@ pub trait Remote<
         let _res = tx.send((value, Ready::Ready));
     }
 
+    /// spawn remote request to fetch latest view of object from service
     fn fetch(id: K) {
-        info!("remote::fetch: {:?}", id);
-        let callback = move |js_val: JsValue| {
-            info!("fetch callback: {:?}", js_val);
+        let callback = move |_js_val: JsValue| {
             let then = Closure::wrap(Box::new(move || {
-                info!("fetch delay complete");
                 let (value, _) = Self::get(id, &V::default());
                 Self::update(id, value);
             }) as Box<dyn Fn()>);
@@ -54,16 +55,12 @@ pub trait Remote<
         let url = Self::endpoint(id);
         let p = window.fetch_with_str(&url);
         let _res = execute(do_fetch(p, Box::new(callback)));
-        info!("through");
     }
 
+    /// propagate a mutation to the service
     fn relay(id: K, _m: &impl Mutator<V>) {
-        info!("remote::relay: {:?}", id);
-        info!("fetch::mutate");
-        let callback = move |js_val: JsValue| {
-            info!("relay callback {:?}", js_val);
+        let callback = move |_js_val: JsValue| {
             let then = Closure::wrap(Box::new(move || {
-                info!("relay delay complete");
                 let (value, _) = Self::get(id, &V::default());
                 Self::update(id, value);
             }) as Box<dyn Fn()>);
@@ -79,78 +76,78 @@ pub trait Remote<
         let url = Self::endpoint(id);
         let p = window.fetch_with_str(&url);
         let _res = execute(do_fetch(p, Box::new(callback)));
-        info!("through");
     }
 }
 
 #[allow(dead_code)]
 async fn do_fetch(p: Promise, callback: Box<dyn Fn(JsValue)>) {
-    info!("do_fetch");
     let f = JsFuture::from(p).await.ok();
-    info!("response!: {:?}", f);
     callback(f.unwrap());
 }
 
 #[macro_export]
+/// Implement fetch from remote for type
 macro_rules! remote {
     ($ExT:ident, $K:ty, $V:ty, $e:expr) => {
-        impl<'de> crate::fetch::Remote<'de, $K, $V> for $ExT {
+        impl<'de> valerie::fetch::Remote<'de, $K, $V> for $ExT {
             fn endpoint(_id: $K) -> String {
                 $e.to_string()
             }
         }
-        impl<'de> crate::store::Relation<$K, $V> for $ExT {
-            type Store = HashMap<
+        impl<'de> valerie::store::Relation<$K, $V> for $ExT {
+            type Store = valerie::store::HashMap<
                 $V,
                 (
                     $V,
-                    crate::store::Ready,
-                    futures_intrusive::channel::shared::StateSender<($V, crate::store::Ready)>,
-                    futures_intrusive::channel::shared::StateReceiver<($V, crate::store::Ready)>,
+                    valerie::store::Ready,
+                    futures_intrusive::channel::shared::StateSender<($V, valerie::store::Ready)>,
+                    futures_intrusive::channel::shared::StateReceiver<($V, valerie::store::Ready)>,
                 ),
             >;
 
-            fn store() -> &'static std::sync::Mutex<
-                HashMap<
+            fn store() -> &'static valerie::store::Mutex<
+                valerie::store::HashMap<
                     $K,
                     (
                         $V,
-                        crate::store::Ready,
-                        futures_intrusive::channel::shared::StateSender<($V, crate::store::Ready)>,
+                        valerie::store::Ready,
+                        futures_intrusive::channel::shared::StateSender<(
+                            $V,
+                            valerie::store::Ready,
+                        )>,
                         futures_intrusive::channel::shared::StateReceiver<(
                             $V,
-                            crate::store::Ready,
+                            valerie::store::Ready,
                         )>,
                     ),
                 >,
             > {
                 lazy_static! {
-                    static ref STORE: std::sync::Mutex<
-                        HashMap<
+                    static ref STORE: valerie::store::Mutex<
+                        valerie::store::HashMap<
                             $K,
                             (
                                 $V,
-                                crate::store::Ready,
+                                valerie::store::Ready,
                                 futures_intrusive::channel::shared::StateSender<(
                                     $V,
-                                    crate::store::Ready
+                                    valerie::store::Ready
                                 )>,
                                 futures_intrusive::channel::shared::StateReceiver<(
                                     $V,
-                                    crate::store::Ready
+                                    valerie::store::Ready
                                 )>
                             ),
                         >,
-                    > = { std::sync::Mutex::new(HashMap::new()) };
+                    > = { valerie::store::Mutex::new(valerie::store::HashMap::new()) };
                 }
                 &STORE
             }
 
-            fn get(id: $K, template: &$V) -> ($V, crate::store::Ready) {
-                info!("remote::get: {:?}", id);
+            fn get(id: $K, template: &$V) -> ($V, valerie::store::Ready) {
                 {
                     let store = Self::store();
-                    let lock = store.lock().unwrap();
+                    let lock = store.lock();
                     let res = (*lock).get(&id);
                     if let Some((v, r, _, _)) = res {
                         return ((*v).clone(), *r);
@@ -158,14 +155,13 @@ macro_rules! remote {
                 }
                 let result = <$V>::clone(template);
                 Self::insert(id, result.clone());
-                <Self as crate::fetch::Remote<'de, $K, $V>>::fetch(id);
-                (result, crate::store::Ready::Loading)
+                <Self as valerie::fetch::Remote<'de, $K, $V>>::fetch(id);
+                (result, valerie::store::Ready::Loading)
             }
 
             fn mutate(id: $K, m: &impl Mutator<$V>) {
-                info!("remote::mutate: {:?}", id);
                 let store = Self::store();
-                let mut lock = store.lock().unwrap();
+                let mut lock = store.lock();
                 let (v, tx, rx) = {
                     let (v, _, tx, rx) = lock.get(&id).unwrap();
                     (v, (*tx).clone(), (*rx).clone())
@@ -173,13 +169,13 @@ macro_rules! remote {
                 let mutated_value = m.mutate(v);
                 let new_value = (
                     mutated_value.clone(),
-                    crate::store::Ready::_Saving,
+                    valerie::store::Ready::_Saving,
                     tx.clone(),
                     rx.clone(),
                 );
                 lock.insert(id, new_value);
-                let _res = tx.send((mutated_value, crate::store::Ready::_Saving));
-                <Self as crate::fetch::Remote<'de, $K, $V>>::relay(id, m);
+                let _res = tx.send((mutated_value, valerie::store::Ready::_Saving));
+                <Self as valerie::fetch::Remote<'de, $K, $V>>::relay(id, m);
             }
         }
     };

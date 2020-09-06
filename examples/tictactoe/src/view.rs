@@ -1,11 +1,13 @@
 use super::model::*;
-use super::store::*;
 
 use valerie::prelude::components::*;
 use valerie::prelude::*;
+use valerie::store::*;
 
-use std::fmt::{Display, Formatter, Result};
-use std::sync::Arc;
+extern crate alloc;
+
+use alloc::sync::Arc;
+use core::fmt::{Display, Formatter, Result};
 
 pub fn game() -> Node {
     info!("game");
@@ -85,10 +87,15 @@ fn square(id: SquareID) -> Node {
     info!("square");
     button!(Square::formatted(id, |s, r| {
         debug!("Sq");
-        if let Ready::Ready = r {
-            format!("{}", s.mark)
-        } else {
-            format!("?")
+        match r {
+            Ready::Ready => format!("{}", s.mark),
+            _ => {
+                if let SquareMark::Empty = s.mark {
+                    format!("?")
+                } else {
+                    format!("{}", format!("{}", s.mark).to_lowercase())
+                }
+            }
         }
     }))
     .class("square")
